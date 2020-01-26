@@ -51,13 +51,15 @@ namespace CAP6010_Project
                 return;
             }
 
-            int[,] rawValues = ImportCSV(out int inputFileSizeInBits);
+            int[,] rawValues = ImportCSV(out int unCompressedSizeInBits);
 
-            int[,] convertedValues = ConvertValues(rawValues, predictorsCombobox.SelectedIndex);
+            int[,] convertedValues = CompressValues(rawValues, predictorsCombobox.SelectedIndex);
 
             Dictionary<string, string> huffmanTable = BuildHuffmanTable();
 
-            List<string> binaryStrings = ConvertToHuffmanCode(convertedValues, huffmanTable);
+            List<string> binaryStrings = ConvertToHuffmanCode(convertedValues, huffmanTable, out int compressedSizeInBits);
+
+            float CompressionRation = (float)unCompressedSizeInBits / (float)compressedSizeInBits;
         }
 
         private int[,] ImportCSV(out int inputFileSizeInBits)
@@ -108,12 +110,12 @@ namespace CAP6010_Project
         }
 
         /// <summary>
-        /// Convert Values with Specified Predictor
+        /// Compress values with specified predictor
         /// </summary>
         /// <param name="inputArray">2D Input Array</param>
         /// <param name="predictor">Predictor value (1-7) to use for conversion</param>
         /// <returns></returns>
-        private int[,] ConvertValues(int[,] inputArray, int predictor)
+        private int[,] CompressValues(int[,] inputArray, int predictor)
         {
             if (inputArray == null)
             {
@@ -134,23 +136,29 @@ namespace CAP6010_Project
                     bool b_exists = TryGetB(inputArray, row, col, out int b);
                     bool c_exists = TryGetC(inputArray, row, col, out int c);
 
-                    // If 'a' exists, then x-hat = x-a
-                    if (a_exists)
+                    switch (predictor)
                     {
-                        outputArray[row, col] = (int)(inputArray[row, col] - a);
-                    }
-                    else
-                    {
-                        if (b_exists)
-                        {
-                            // Row > 1, Col = 1.
-                            outputArray[row, col] = (int)(inputArray[row, col] - b);
-                        }
-                        else
-                        {
-                            // Use the same value. Row = 1, Col = 1.
-                            outputArray[row, col] = inputArray[row, col];
-                        }
+                        case 1:
+                            UsePredictor1(a_exists, a, b_exists, b, c_exists, c, inputArray, outputArray, row, col);
+                            break;
+                        case 2:
+                            UsePredictor2(a_exists, a, b_exists, b, c_exists, c, inputArray, outputArray, row, col);
+                            break;
+                        case 3:
+                            UsePredictor3(a_exists, a, b_exists, b, c_exists, c, inputArray, outputArray, row, col);
+                            break;
+                        case 4:
+                            UsePredictor4(a_exists, a, b_exists, b, c_exists, c, inputArray, outputArray, row, col);
+                            break;
+                        case 5:
+                            UsePredictor5(a_exists, a, b_exists, b, c_exists, c, inputArray, outputArray, row, col);
+                            break;
+                        case 6:
+                            UsePredictor6(a_exists, a, b_exists, b, c_exists, c, inputArray, outputArray, row, col);
+                            break;
+                        case 7:
+                            UsePredictor7(a_exists, a, b_exists, b, c_exists, c, inputArray, outputArray, row, col);
+                            break;
                     }
                 }
             }
@@ -158,6 +166,67 @@ namespace CAP6010_Project
             return outputArray;
         }
 
+        private void UsePredictor1(bool a_exists, int a, bool b_exists, int b, bool c_exists, int c, int[,] inputArray, int[,] outputArray, int row, int col)
+        {
+            // If 'a' exists, then x-hat = x-a
+            if (a_exists)
+            {
+                outputArray[row, col] = (int)(inputArray[row, col] - a);
+            }
+            else
+            {
+                if (b_exists)
+                {
+                    // Row > 1, Col = 1.
+                    outputArray[row, col] = (int)(inputArray[row, col] - b);
+                }
+                else
+                {
+                    // Use the same value. Row = 1, Col = 1.
+                    outputArray[row, col] = inputArray[row, col];
+                }
+            }
+        }
+
+        private void UsePredictor2(bool a_exists, int a, bool b_exists, int b, bool c_exists, int c, int[,] inputArray, int[,] outputArray, int row, int col)
+        {
+
+        }
+
+        private void UsePredictor3(bool a_exists, int a, bool b_exists, int b, bool c_exists, int c, int[,] inputArray, int[,] outputArray, int row, int col)
+        {
+
+        }
+
+        private void UsePredictor4(bool a_exists, int a, bool b_exists, int b, bool c_exists, int c, int[,] inputArray, int[,] outputArray, int row, int col)
+        {
+
+        }
+
+        private void UsePredictor5(bool a_exists, int a, bool b_exists, int b, bool c_exists, int c, int[,] inputArray, int[,] outputArray, int row, int col)
+        {
+
+        }
+
+        private void UsePredictor6(bool a_exists, int a, bool b_exists, int b, bool c_exists, int c, int[,] inputArray, int[,] outputArray, int row, int col)
+        {
+
+        }
+
+        private void UsePredictor7(bool a_exists, int a, bool b_exists, int b, bool c_exists, int c, int[,] inputArray, int[,] outputArray, int row, int col)
+        {
+
+        }
+
+
+        /// <summary>
+        /// Check if there is a value to the left of the current cell
+        /// </summary>
+        /// <param name="inputArray"></param>
+        /// <param name="row"></param>
+        /// <param name="col"></param>
+        /// <param name="cellValue"></param>
+        /// <returns></returns>
         private bool TryGetA(int[,] inputArray, int row, int col, out int cellValue)
         {
             try
@@ -179,6 +248,14 @@ namespace CAP6010_Project
             }
         }
 
+        /// <summary>
+        /// Check if there is a value above current cell
+        /// </summary>
+        /// <param name="inputArray"></param>
+        /// <param name="row"></param>
+        /// <param name="col"></param>
+        /// <param name="cellValue"></param>
+        /// <returns></returns>
         private bool TryGetB(int[,] inputArray, int row, int col, out int cellValue)
         {
             try
@@ -200,6 +277,14 @@ namespace CAP6010_Project
             }
         }
 
+        /// <summary>
+        /// Check if there is a value to the left and above the current cell
+        /// </summary>
+        /// <param name="inputArray"></param>
+        /// <param name="row"></param>
+        /// <param name="col"></param>
+        /// <param name="cellValue"></param>
+        /// <returns></returns>
         private bool TryGetC(int[,] inputArray, int row, int col, out int cellValue)
         {
             try
@@ -221,6 +306,10 @@ namespace CAP6010_Project
             }
         }
 
+        /// <summary>
+        /// Creates the Huffman table in a Dictionary object
+        /// </summary>
+        /// <returns></returns>
         private Dictionary<string, string> BuildHuffmanTable()
         {
             Dictionary<string, string> huffmanTable = new Dictionary<string, string>();
@@ -242,8 +331,16 @@ namespace CAP6010_Project
             return huffmanTable;
         }
 
-        private List<string> ConvertToHuffmanCode(int[,] convertedIntegers, Dictionary<string, string> huffmanTable)
+        /// <summary>
+        /// Take the compressed integers and convert them to Huffman values
+        /// </summary>
+        /// <param name="convertedIntegers"></param>
+        /// <param name="huffmanTable"></param>
+        /// <returns></returns>
+        private List<string> ConvertToHuffmanCode(int[,] convertedIntegers, Dictionary<string, string> huffmanTable, out int compressedSizeInBits)
         {
+            compressedSizeInBits = 0;
+
             List<string> huffmanCodeList = new List<string>();
 
             // Loop through rows
@@ -272,6 +369,8 @@ namespace CAP6010_Project
 
                     rowOfHuffmanCodes.Append(encodedValue);
                 }
+
+                compressedSizeInBits += rowOfHuffmanCodes.ToString().Length;
 
                 huffmanCodeList.Add(rowOfHuffmanCodes.ToString());
             }
