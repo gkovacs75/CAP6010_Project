@@ -51,19 +51,69 @@ namespace CAP6010_Project
                 return;
             }
 
-            int[,] values = ImportCSV();
+            int[,] rawValues = ImportCSV(out int inputFileSizeInBits);
+
+            int[,] convertedValues = ConvertValues(rawValues, predictorsCombobox.SelectedIndex);
 
             Dictionary<string, string> huffmanTable = BuildHuffmanTable();
 
-            int[,] encodedWithDataTable = Encode(values, predictorsCombobox.SelectedIndex);
+            List<string> binaryStrings = ConvertToHuffmanCode(convertedValues, huffmanTable);
+        }
+
+        private int[,] ImportCSV(out int inputFileSizeInBits)
+        {
+            inputFileSizeInBits = 0;
+
+            string filePath = @"../../Files/inputfile1.csv";
+
+            string csvData;
+
+            try
+            {
+                csvData = File.ReadAllText(filePath);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                return null;
+            }
+
+            int rowIndex = 0;
+
+            string[] rows = csvData.Split("\r\n".ToCharArray(), StringSplitOptions.RemoveEmptyEntries);
+            int numCells = (rows[0].Split(',')).Count();
+
+            int[,] array = new int[rows.Count(), numCells];
+
+            foreach (string row in rows)
+            {
+                string[] cells = row.Split(',');
+
+                int columnIndex = 0;
+
+                foreach (string cell in cells)
+                {
+                    array[rowIndex, columnIndex] = int.Parse(cell);
+
+                    columnIndex++;
+                }
+
+                rowIndex++;
+            }
+
+            // Calculate the size (in bits) of the import data
+            inputFileSizeInBits = rows.Count() * numCells * 8;
+
+            return array;
         }
 
         /// <summary>
-        /// Encode with Predictor 1: x-hat = A
+        /// Convert Values with Specified Predictor
         /// </summary>
         /// <param name="inputArray">2D Input Array</param>
+        /// <param name="predictor">Predictor value (1-7) to use for conversion</param>
         /// <returns></returns>
-        private int[,] Encode(int[,] inputArray, int predictor)
+        private int[,] ConvertValues(int[,] inputArray, int predictor)
         {
             if (inputArray == null)
             {
@@ -171,48 +221,6 @@ namespace CAP6010_Project
             }
         }
 
-        private int[,] ImportCSV()
-        {
-            string filePath = @"../../Files/inputfile1.csv";
-
-            string csvData;
-
-            try
-            {
-                csvData = File.ReadAllText(filePath);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                return null;
-            }
-
-            int rowIndex = 0;
-
-            string[] rows = csvData.Split("\r\n".ToCharArray(), StringSplitOptions.RemoveEmptyEntries);
-            int numCells = (rows[0].Split(',')).Count();
-
-            int[,] array = new int[rows.Count(), numCells];
-
-            foreach (string row in rows)
-            {
-                string[] cells = row.Split(',');
-
-                int columnIndex = 0;
-
-                foreach (string cell in cells)
-                {
-                    array[rowIndex, columnIndex] = int.Parse(cell);
-
-                    columnIndex++;
-                }
-
-                rowIndex++;
-            }
-
-            return array;
-        }
-
         private Dictionary<string, string> BuildHuffmanTable()
         {
             Dictionary<string, string> huffmanTable = new Dictionary<string, string>();
@@ -232,6 +240,43 @@ namespace CAP6010_Project
             huffmanTable.Add("-6", "0101010101011");
 
             return huffmanTable;
+        }
+
+        private List<string> ConvertToHuffmanCode(int[,] convertedIntegers, Dictionary<string, string> huffmanTable)
+        {
+            List<string> huffmanCodeList = new List<string>();
+
+            // Loop through rows
+            for (int row = 0; row < convertedIntegers.GetLength(0); row++)
+            {
+                StringBuilder rowOfHuffmanCodes = new StringBuilder();
+                rowOfHuffmanCodes.Clear();
+
+                // Loop through columns
+                for (int col = 0; col < convertedIntegers.GetLength(1); col++)
+                {
+                    int valueToEncode = convertedIntegers[row, col];
+                    string encodedValue;
+
+                    // Check the Huffman table to see if the code exists
+                    if (huffmanTable.ContainsKey(valueToEncode.ToString()))
+                    {
+                        // If it exists, append it to the output list
+                        encodedValue = huffmanTable[valueToEncode.ToString()];
+                    }
+                    else
+                    {
+                        // If it doesn't exist, then convert the value to a binary
+                        encodedValue = Convert.ToString(valueToEncode, 2).PadLeft(8, '0');
+                    }
+
+                    rowOfHuffmanCodes.Append(encodedValue);
+                }
+
+                huffmanCodeList.Add(rowOfHuffmanCodes.ToString());
+            }
+
+            return huffmanCodeList;
         }
     }
 }
