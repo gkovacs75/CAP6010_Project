@@ -31,12 +31,12 @@ namespace CAP6010_Project
 
             predictors.Add(new Predictor { Id = 0, Name = "Choose a Predictor" });
             predictors.Add(new Predictor { Id = 1, Name = "Predictor 1: ", Photo = "Images/Predictor1.png" });
-            predictors.Add(new Predictor { Id = 1, Name = "Predictor 2: ", Photo = "Images/Predictor2.png" });
-            predictors.Add(new Predictor { Id = 1, Name = "Predictor 3: ", Photo = "Images/Predictor3.png" });
-            predictors.Add(new Predictor { Id = 1, Name = "Predictor 4: ", Photo = "Images/Predictor4.png" });
-            predictors.Add(new Predictor { Id = 1, Name = "Predictor 5: ", Photo = "Images/Predictor5.png" });
-            predictors.Add(new Predictor { Id = 1, Name = "Predictor 6: ", Photo = "Images/Predictor6.png" });
-            predictors.Add(new Predictor { Id = 1, Name = "Predictor 7: ", Photo = "Images/Predictor7.png" });
+            predictors.Add(new Predictor { Id = 2, Name = "Predictor 2: ", Photo = "Images/Predictor2.png" });
+            predictors.Add(new Predictor { Id = 3, Name = "Predictor 3: ", Photo = "Images/Predictor3.png" });
+            predictors.Add(new Predictor { Id = 4, Name = "Predictor 4: ", Photo = "Images/Predictor4.png" });
+            predictors.Add(new Predictor { Id = 5, Name = "Predictor 5: ", Photo = "Images/Predictor5.png" });
+            predictors.Add(new Predictor { Id = 6, Name = "Predictor 6: ", Photo = "Images/Predictor6.png" });
+            predictors.Add(new Predictor { Id = 7, Name = "Predictor 7: ", Photo = "Images/Predictor7.png" });
 
             predictorsCombobox.ItemsSource = predictors;
             predictorsCombobox.SelectedIndex = 0;
@@ -45,19 +45,17 @@ namespace CAP6010_Project
 
         private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
-            //if (predictorsCombobox.SelectedIndex == 0)
-            //{
-            //    MessageBox.Show("Choose a Predictor");
-            //    return;
-            //}
+            if (predictorsCombobox.SelectedIndex == 0)
+            {
+                MessageBox.Show("Choose a Predictor", "Predictor", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
 
-            //DataTable dataTable = ImportCSV();
-            byte[,] values = ImportCSV2();
+            int[,] values = ImportCSV();
 
             Dictionary<string, string> huffmanTable = BuildHuffmanTable();
 
-            //DataTable encodedWithDataTable = EncodeWithPredictor1(dataTable);
-            byte[,] encodedWithDataTable = EncodeWithPredictor1(values);
+            int[,] encodedWithDataTable = Encode(values, predictorsCombobox.SelectedIndex);
         }
 
         /// <summary>
@@ -65,10 +63,15 @@ namespace CAP6010_Project
         /// </summary>
         /// <param name="inputArray">2D Input Array</param>
         /// <returns></returns>
-        private byte[,] EncodeWithPredictor1(byte[,] inputArray)
+        private int[,] Encode(int[,] inputArray, int predictor)
         {
+            if (inputArray == null)
+            {
+                return null;
+            }
+
             // Create the output array and make it the same size as the input array
-            byte[,] outputArray = new byte[inputArray.GetLength(0), inputArray.GetLength(1)];
+            int[,] outputArray = new int[inputArray.GetLength(0), inputArray.GetLength(1)];
 
             // Loop through rows
             for (int row = 0; row < inputArray.GetLength(0); row++)
@@ -77,17 +80,27 @@ namespace CAP6010_Project
                 for (int col = 0; col < inputArray.GetLength(1); col++)
                 {
                     // Check if A exists, if so, get it's value
-                    bool a_exists = TryGetA(inputArray, row, col, out byte a);
+                    bool a_exists = TryGetA(inputArray, row, col, out int a);
+                    bool b_exists = TryGetB(inputArray, row, col, out int b);
+                    bool c_exists = TryGetC(inputArray, row, col, out int c);
 
-                    // If a exists, then x-hat = x-a
+                    // If 'a' exists, then x-hat = x-a
                     if (a_exists)
                     {
-                        outputArray[row, col] = (byte)(inputArray[row, col] - a);
+                        outputArray[row, col] = (int)(inputArray[row, col] - a);
                     }
                     else
                     {
-                        // Use the same value
-                        outputArray[row, col] = inputArray[row, col];
+                        if (b_exists)
+                        {
+                            // Row > 1, Col = 1.
+                            outputArray[row, col] = (int)(inputArray[row, col] - b);
+                        }
+                        else
+                        {
+                            // Use the same value. Row = 1, Col = 1.
+                            outputArray[row, col] = inputArray[row, col];
+                        }
                     }
                 }
             }
@@ -95,7 +108,7 @@ namespace CAP6010_Project
             return outputArray;
         }
 
-        private bool TryGetA(byte[,] inputArray, int row, int col, out byte cellValue)
+        private bool TryGetA(int[,] inputArray, int row, int col, out int cellValue)
         {
             try
             {
@@ -116,7 +129,7 @@ namespace CAP6010_Project
             }
         }
 
-        private bool TryGetB(byte[,] inputArray, int row, int col, out byte cellValue)
+        private bool TryGetB(int[,] inputArray, int row, int col, out int cellValue)
         {
             try
             {
@@ -137,7 +150,7 @@ namespace CAP6010_Project
             }
         }
 
-        private bool TryGetC(byte[,] inputArray, int row, int col, out byte cellValue)
+        private bool TryGetC(int[,] inputArray, int row, int col, out int cellValue)
         {
             try
             {
@@ -158,71 +171,28 @@ namespace CAP6010_Project
             }
         }
 
-        private DataTable EncodeWithPredictor1(DataTable dataTable)
-        {
-            foreach (DataRow row in dataTable.Rows)
-            {
-                foreach (DataColumn col in dataTable.Columns)
-                {
-                    object callValue = row[col];
-                }
-            }
-
-            return null;
-        }
-
-        private DataTable ImportCSV()
+        private int[,] ImportCSV()
         {
             string filePath = @"../../Files/inputfile1.csv";
 
-            DataTable dataTable = new DataTable();
-            dataTable.Clear();
+            string csvData;
 
-            string csvData = File.ReadAllText(filePath);
-
-            int rowIndex = 0;
-
-            foreach (string row in csvData.Split("\r\n".ToCharArray(), StringSplitOptions.RemoveEmptyEntries))
+            try
             {
-                if (!string.IsNullOrEmpty(row))
-                {
-                    dataTable.Rows.Add();
-
-                    int columnIndex = 0;
-
-                    foreach (string cell in row.Split(','))
-                    {
-                        if (rowIndex == 0)
-                        {
-                            dataTable.Columns.Add("", typeof(byte));
-                        }
-
-                        dataTable.Rows[dataTable.Rows.Count - 1][columnIndex] = byte.Parse(cell);
-
-                        columnIndex++;
-                    }
-
-                    rowIndex++;
-                }
+                csvData = File.ReadAllText(filePath);
             }
-
-            //myDataGrid.ItemsSource = dt.DefaultView;
-
-            return dataTable;
-        }
-
-        private byte[,] ImportCSV2()
-        {
-            string filePath = @"../../Files/inputfile1.csv";
-
-            string csvData = File.ReadAllText(filePath);
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                return null;
+            }
 
             int rowIndex = 0;
 
             string[] rows = csvData.Split("\r\n".ToCharArray(), StringSplitOptions.RemoveEmptyEntries);
             int numCells = (rows[0].Split(',')).Count();
 
-            byte[,] array = new byte[rows.Count(), numCells];
+            int[,] array = new int[rows.Count(), numCells];
 
             foreach (string row in rows)
             {
@@ -232,7 +202,7 @@ namespace CAP6010_Project
 
                 foreach (string cell in cells)
                 {
-                    array[rowIndex, columnIndex] = byte.Parse(cell);
+                    array[rowIndex, columnIndex] = int.Parse(cell);
 
                     columnIndex++;
                 }
