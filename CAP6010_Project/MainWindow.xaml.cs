@@ -28,38 +28,53 @@ namespace CAP6010_Project
         public MainWindow()
         {
             InitializeComponent();
-
-            predictors.Add(new Predictor { Id = 0, Name = "Choose a Predictor" });
-            predictors.Add(new Predictor { Id = 1, Name = "Predictor 1: ", Photo = "Images/Predictor1.png" });
-            predictors.Add(new Predictor { Id = 2, Name = "Predictor 2: ", Photo = "Images/Predictor2.png" });
-            predictors.Add(new Predictor { Id = 3, Name = "Predictor 3: ", Photo = "Images/Predictor3.png" });
-            predictors.Add(new Predictor { Id = 4, Name = "Predictor 4: ", Photo = "Images/Predictor4.png" });
-            predictors.Add(new Predictor { Id = 5, Name = "Predictor 5: ", Photo = "Images/Predictor5.png" });
-            predictors.Add(new Predictor { Id = 6, Name = "Predictor 6: ", Photo = "Images/Predictor6.png" });
-            predictors.Add(new Predictor { Id = 7, Name = "Predictor 7: ", Photo = "Images/Predictor7.png" });
-
-            predictorsCombobox.ItemsSource = predictors;
-            predictorsCombobox.SelectedIndex = 0;
         }
 
 
-        private void SaveButton_Click(object sender, RoutedEventArgs e)
+        private void RunButton_Click(object sender, RoutedEventArgs e)
         {
-            if (predictorsCombobox.SelectedIndex == 0)
-            {
-                MessageBox.Show("Choose a Predictor", "Predictor", MessageBoxButton.OK, MessageBoxImage.Information);
-                return;
-            }
+            StringBuilder sb = new StringBuilder();
 
-            int[,] rawValues = ImportCSV(out int unCompressedSizeInBits);
+            sb.Append("<!DOCTYPE html><html><body>");
+            sb.Append("<h1>CAP 6010 Project Results</h1>");
+            sb.Append("<h3>Gabor Kovacs</h3>");
+            sb.Append("<hr>");
 
-            int[,] convertedValues = CompressValues(rawValues, predictorsCombobox.SelectedIndex);
 
             Dictionary<string, string> huffmanTable = BuildHuffmanTable();
 
-            List<string> binaryStrings = ConvertToHuffmanCode(convertedValues, huffmanTable, out int compressedSizeInBits);
+            sb.Append("<h3>Original Image:</h3>");
 
-            float CompressionRation = (float)unCompressedSizeInBits / (float)compressedSizeInBits;
+            int[,] rawValues = ImportCSV(out int unCompressedSizeInBits);
+
+            Print2DArray(sb, rawValues);
+
+            List<int[,]> listOfCompressedImages = CompressImage(rawValues);
+
+            for (int predictor = 1; predictor <= 7; predictor++)
+            {
+                sb.Append("<p>");
+
+                sb.Append(String.Format("<h3>Predictor {0}</h3>", predictor));
+
+                List<string> binaryStrings = ConvertToHuffmanCode(listOfCompressedImages[predictor - 1], huffmanTable, out int compressedSizeInBits);
+
+                foreach (string binaryString in binaryStrings)
+                {
+                    sb.Append(binaryString);
+                    sb.Append("<br>");
+                }
+
+                float CompressionRation = (float)unCompressedSizeInBits / (float)compressedSizeInBits;
+
+                sb.Append("</p>");
+            }
+
+            sb.Append("</body></html>");
+
+            File.WriteAllText(@"output.html", sb.ToString());
+
+            Application.Current.Shutdown();
         }
 
         private int[,] ImportCSV(out int inputFileSizeInBits)
@@ -109,61 +124,92 @@ namespace CAP6010_Project
             return array;
         }
 
+        private void Print2DArray(StringBuilder sb, int[,] array)
+        {
+            sb.Append("<table border=1>");
+
+            int dim1 = array.GetLength(0);
+            int dim2 = array.GetLength(1);
+
+            for (int row = 0; row < dim1; row++)
+            {
+                sb.Append("<tr>");
+
+                // Loop through columns
+                for (int col = 0; col < dim2; col++)
+                {
+                    sb.Append("<td width='50px'>");
+                    sb.Append(array[row, col].ToString());
+                    sb.Append("</td>");
+                }
+                sb.Append("</tr>");
+            }
+
+            sb.Append("</table>");
+        }
+
         /// <summary>
         /// Compress values with specified predictor
         /// </summary>
         /// <param name="inputArray">2D Input Array</param>
         /// <param name="predictor">Predictor value (1-7) to use for conversion</param>
         /// <returns></returns>
-        private int[,] CompressValues(int[,] inputArray, int predictor)
+        private List<int[,]> CompressImage(int[,] inputArray)
         {
             if (inputArray == null)
             {
                 return null;
             }
 
-            // Create the output array and make it the same size as the input array
-            int[,] outputArray = new int[inputArray.GetLength(0), inputArray.GetLength(1)];
+            // Create a list that will hold the 7 outputs
+            List<int[,]> outputs = new List<int[,]>();
+
+            // Create the 7 output arrays and make it the same size as the input array
+            int dim1 = inputArray.GetLength(0);
+            int dim2 = inputArray.GetLength(1);
+
+            // Output for all 7 2D arrays
+            int[,] outputArrayForPredictor1 = new int[dim1, dim2];
+            int[,] outputArrayForPredictor2 = new int[dim1, dim2];
+            int[,] outputArrayForPredictor3 = new int[dim1, dim2];
+            int[,] outputArrayForPredictor4 = new int[dim1, dim2];
+            int[,] outputArrayForPredictor5 = new int[dim1, dim2];
+            int[,] outputArrayForPredictor6 = new int[dim1, dim2];
+            int[,] outputArrayForPredictor7 = new int[dim1, dim2];
 
             // Loop through rows
-            for (int row = 0; row < inputArray.GetLength(0); row++)
+            for (int row = 0; row < dim1; row++)
             {
                 // Loop through columns
-                for (int col = 0; col < inputArray.GetLength(1); col++)
+                for (int col = 0; col < dim2; col++)
                 {
                     // Check if A exists, if so, get it's value
                     bool a_exists = TryGetA(inputArray, row, col, out int a);
+                    // Check if B exists, if so, get it's value
                     bool b_exists = TryGetB(inputArray, row, col, out int b);
+                    // Check if C exists, if so, get it's value
                     bool c_exists = TryGetC(inputArray, row, col, out int c);
 
-                    switch (predictor)
-                    {
-                        case 1:
-                            UsePredictor1(a_exists, a, b_exists, b, c_exists, c, inputArray, outputArray, row, col);
-                            break;
-                        case 2:
-                            UsePredictor2(a_exists, a, b_exists, b, c_exists, c, inputArray, outputArray, row, col);
-                            break;
-                        case 3:
-                            UsePredictor3(a_exists, a, b_exists, b, c_exists, c, inputArray, outputArray, row, col);
-                            break;
-                        case 4:
-                            UsePredictor4(a_exists, a, b_exists, b, c_exists, c, inputArray, outputArray, row, col);
-                            break;
-                        case 5:
-                            UsePredictor5(a_exists, a, b_exists, b, c_exists, c, inputArray, outputArray, row, col);
-                            break;
-                        case 6:
-                            UsePredictor6(a_exists, a, b_exists, b, c_exists, c, inputArray, outputArray, row, col);
-                            break;
-                        case 7:
-                            UsePredictor7(a_exists, a, b_exists, b, c_exists, c, inputArray, outputArray, row, col);
-                            break;
-                    }
+                    // Run each of the 7 predictors
+                    UsePredictor1(a_exists, a, b_exists, b, c_exists, c, inputArray, outputArrayForPredictor1, row, col);
+                    UsePredictor2(a_exists, a, b_exists, b, c_exists, c, inputArray, outputArrayForPredictor2, row, col);
+                    UsePredictor3(a_exists, a, b_exists, b, c_exists, c, inputArray, outputArrayForPredictor3, row, col);
+                    UsePredictor4(a_exists, a, b_exists, b, c_exists, c, inputArray, outputArrayForPredictor4, row, col);
+                    UsePredictor5(a_exists, a, b_exists, b, c_exists, c, inputArray, outputArrayForPredictor5, row, col);
+                    UsePredictor6(a_exists, a, b_exists, b, c_exists, c, inputArray, outputArrayForPredictor6, row, col);
+                    UsePredictor7(a_exists, a, b_exists, b, c_exists, c, inputArray, outputArrayForPredictor7, row, col);
                 }
             }
 
-            return outputArray;
+            outputs.Add(outputArrayForPredictor1);
+            outputs.Add(outputArrayForPredictor2);
+            outputs.Add(outputArrayForPredictor3);
+            outputs.Add(outputArrayForPredictor4);
+            outputs.Add(outputArrayForPredictor5);
+            outputs.Add(outputArrayForPredictor6);
+            outputs.Add(outputArrayForPredictor7);
+
+            return outputs;
         }
 
         private void UsePredictor1(bool a_exists, int a, bool b_exists, int b, bool c_exists, int c, int[,] inputArray, int[,] outputArray, int row, int col)
