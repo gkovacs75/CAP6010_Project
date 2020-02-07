@@ -142,5 +142,14 @@
       <Install>false</Install>
     </BootstrapperPackage>
   </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\Predictor1.png" />
+    <Resource Include="Images\Predictor2.png" />
+    <Resource Include="Images\Predictor3.png" />
+    <Resource Include="Images\Predictor4.png" />
+    <Resource Include="Images\Predictor5.png" />
+    <Resource Include="Images\Predictor6.png" />
+    <Resource Include="Images\Predictor7.png" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

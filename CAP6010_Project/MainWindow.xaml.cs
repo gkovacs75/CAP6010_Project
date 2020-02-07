@@ -55,15 +55,20 @@ namespace CAP6010_Project
             {
                 sb.Append("<p>");
 
-                sb.Append(String.Format("<h3>Predictor {0}</h3>", predictor));
+                sb.Append(String.Format("<h3>Predictor {0}: {1} </h3>", predictor, String.Format(@"<img src='..\..\Images\Predictor{0}.png'>", predictor)));
 
                 List<string> binaryStrings = ConvertToHuffmanCode(listOfCompressedImages[predictor - 1], huffmanTable, out int compressedSizeInBits);
 
+                sb.Append("<p>");
+                sb.Append("<h4>Compressed Binary Sequence:</h4>");
                 foreach (string binaryString in binaryStrings)
                 {
-                    sb.Append(binaryString);
+                    sb.Append(binaryString);                    
                     sb.Append("<br>");
                 }
+
+                sb.Append("</p>");
+                sb.Append("<br>");
 
                 float CompressionRation = (float)unCompressedSizeInBits / (float)compressedSizeInBits;
 
@@ -146,6 +151,7 @@ namespace CAP6010_Project
             }
 
             sb.Append("</table>");
+            sb.Append("<br>");
         }
 
         /// <summary>
