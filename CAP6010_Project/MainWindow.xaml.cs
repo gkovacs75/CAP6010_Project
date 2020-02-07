@@ -28,10 +28,15 @@ namespace CAP6010_Project
         public MainWindow()
         {
             InitializeComponent();
+            Run();
         }
 
-
         private void RunButton_Click(object sender, RoutedEventArgs e)
+        {
+            Run();
+        }
+
+        private void Run()
         {
             StringBuilder sb = new StringBuilder();
 
@@ -45,15 +50,15 @@ namespace CAP6010_Project
 
             sb.Append("<h3>Original Image:</h3>");
 
-            int[,] rawValues = ImportCSV(out int unCompressedSizeInBits);
+            int[,] originalImageArray = ImportCSV(out int unCompressedSizeInBits);
 
-            Print2DArray(sb, rawValues);
+            Print2DArray(sb, originalImageArray);
 
-            List<int[,]> listOfCompressedImages = CompressImage(rawValues);
+            List<int[,]> listOfCompressedImages = CompressImage(originalImageArray);
 
             for (int predictor = 1; predictor <= 7; predictor++)
             {
-                sb.Append("<p>");
+                sb.Append("<div style='border:1px solid black;margin-bottom:25px;padding:10px 10px 10px 30px;'>");
 
                 sb.Append(String.Format("<h3>Predictor {0}: {1} </h3>", predictor, String.Format(@"<img src='..\..\Images\Predictor{0}.png' align='middle'>", predictor)));
 
@@ -66,7 +71,6 @@ namespace CAP6010_Project
                     sb.Append(binaryString);
                     sb.Append("<br>");
                 }
-
                 sb.Append("</p>");
                 sb.Append("<br>");
 
@@ -85,7 +89,7 @@ namespace CAP6010_Project
                 sb.Append("<br>");
                 sb.Append("</p>");
 
-                sb.Append("</p>");
+                sb.Append("</div>");
             }
 
             sb.Append("</body></html>");
@@ -324,17 +328,74 @@ namespace CAP6010_Project
 
         private void UsePredictor5(bool a_exists, int a, bool b_exists, int b, bool c_exists, int c, int[,] inputArray, int[,] outputArray, int row, int col)
         {
-
+            if (a_exists && b_exists && c_exists)
+            {
+                outputArray[row, col] = (int)(inputArray[row, col] - (a + ((b - c) / 2)));
+            }
+            else
+            {
+                if (a_exists)
+                {
+                    outputArray[row, col] = (int)(inputArray[row, col] - a);
+                }
+                else if (b_exists)
+                {
+                    outputArray[row, col] = (int)(inputArray[row, col] - b);
+                }
+                else
+                {
+                    // Use the same value
+                    outputArray[row, col] = inputArray[row, col];
+                }
+            }
         }
 
         private void UsePredictor6(bool a_exists, int a, bool b_exists, int b, bool c_exists, int c, int[,] inputArray, int[,] outputArray, int row, int col)
         {
-
+            if (a_exists && b_exists && c_exists)
+            {
+                outputArray[row, col] = (int)(inputArray[row, col] - (b + ((a - c) / 2)));
+            }
+            else
+            {
+                if (a_exists)
+                {
+                    outputArray[row, col] = (int)(inputArray[row, col] - a);
+                }
+                else if (b_exists)
+                {
+                    outputArray[row, col] = (int)(inputArray[row, col] - b);
+                }
+                else
+                {
+                    // Use the same value
+                    outputArray[row, col] = inputArray[row, col];
+                }
+            }
         }
 
         private void UsePredictor7(bool a_exists, int a, bool b_exists, int b, bool c_exists, int c, int[,] inputArray, int[,] outputArray, int row, int col)
         {
-
+            if (a_exists && b_exists)
+            {
+                outputArray[row, col] = (int)(inputArray[row, col] - ((a + b) / 2));
+            }
+            else
+            {
+                if (a_exists)
+                {
+                    outputArray[row, col] = (int)(inputArray[row, col] - a);
+                }
+                else if (b_exists)
+                {
+                    outputArray[row, col] = (int)(inputArray[row, col] - b);
+                }
+                else
+                {
+                    // Use the same value
+                    outputArray[row, col] = inputArray[row, col];
+                }
+            }
         }
 
 
