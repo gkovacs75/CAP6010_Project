@@ -55,7 +55,7 @@ namespace CAP6010_Project
             {
                 sb.Append("<p>");
 
-                sb.Append(String.Format("<h3>Predictor {0}: {1} </h3>", predictor, String.Format(@"<img src='..\..\Images\Predictor{0}.png'>", predictor)));
+                sb.Append(String.Format("<h3>Predictor {0}: {1} </h3>", predictor, String.Format(@"<img src='..\..\Images\Predictor{0}.png' align='middle'>", predictor)));
 
                 List<string> binaryStrings = ConvertToHuffmanCode(listOfCompressedImages[predictor - 1], huffmanTable, out int compressedSizeInBits);
 
@@ -63,14 +63,27 @@ namespace CAP6010_Project
                 sb.Append("<h4>Compressed Binary Sequence:</h4>");
                 foreach (string binaryString in binaryStrings)
                 {
-                    sb.Append(binaryString);                    
+                    sb.Append(binaryString);
                     sb.Append("<br>");
                 }
 
                 sb.Append("</p>");
                 sb.Append("<br>");
 
-                float CompressionRation = (float)unCompressedSizeInBits / (float)compressedSizeInBits;
+                float compressionRatio = (float)unCompressedSizeInBits / (float)compressedSizeInBits;
+                float bitsPerPixel = 8 / compressionRatio;
+
+                sb.Append("<p>");
+                sb.Append("Compression Ratio: ");
+                sb.Append(((float)unCompressedSizeInBits).ToString() + " / " + ((float)compressedSizeInBits).ToString() + " = " + compressionRatio.ToString());
+                sb.Append("<br>");
+                sb.Append("Bits/Pixel: ");
+                sb.Append("8 / " + compressionRatio.ToString() + " = " + bitsPerPixel.ToString());
+                sb.Append("<br>");
+                sb.Append("RMS: ");
+                sb.Append("[rms value holder]");
+                sb.Append("<br>");
+                sb.Append("</p>");
 
                 sb.Append("</p>");
             }
@@ -229,12 +242,11 @@ namespace CAP6010_Project
             {
                 if (b_exists)
                 {
-                    // Row > 1, Col = 1.
                     outputArray[row, col] = (int)(inputArray[row, col] - b);
                 }
                 else
                 {
-                    // Use the same value. Row = 1, Col = 1.
+                    // Use the same value
                     outputArray[row, col] = inputArray[row, col];
                 }
             }
@@ -242,17 +254,72 @@ namespace CAP6010_Project
 
         private void UsePredictor2(bool a_exists, int a, bool b_exists, int b, bool c_exists, int c, int[,] inputArray, int[,] outputArray, int row, int col)
         {
-
+            // If 'b' exists, then x-hat = x-a
+            if (b_exists)
+            {
+                outputArray[row, col] = (int)(inputArray[row, col] - b);
+            }
+            else
+            {
+                if (a_exists)
+                {
+                    outputArray[row, col] = (int)(inputArray[row, col] - a);
+                }
+                else
+                {
+                    // Use the same value
+                    outputArray[row, col] = inputArray[row, col];
+                }
+            }
         }
 
         private void UsePredictor3(bool a_exists, int a, bool b_exists, int b, bool c_exists, int c, int[,] inputArray, int[,] outputArray, int row, int col)
         {
-
+            // If 'c' exists, then x-hat = x-c
+            if (c_exists)
+            {
+                outputArray[row, col] = (int)(inputArray[row, col] - c);
+            }
+            else
+            {
+                if (a_exists)
+                {
+                    outputArray[row, col] = (int)(inputArray[row, col] - a);
+                }
+                else if (b_exists)
+                {
+                    outputArray[row, col] = (int)(inputArray[row, col] - b);
+                }
+                else
+                {
+                    // Use the same value
+                    outputArray[row, col] = inputArray[row, col];
+                }
+            }
         }
 
         private void UsePredictor4(bool a_exists, int a, bool b_exists, int b, bool c_exists, int c, int[,] inputArray, int[,] outputArray, int row, int col)
         {
-
+            if (a_exists && b_exists && c_exists)
+            {
+                outputArray[row, col] = (int)(inputArray[row, col] - (a + b - c));
+            }
+            else
+            {
+                if (a_exists)
+                {
+                    outputArray[row, col] = (int)(inputArray[row, col] - a);
+                }
+                else if (b_exists)
+                {
+                    outputArray[row, col] = (int)(inputArray[row, col] - b);
+                }
+                else
+                {
+                    // Use the same value
+                    outputArray[row, col] = inputArray[row, col];
+                }
+            }
         }
 
         private void UsePredictor5(bool a_exists, int a, bool b_exists, int b, bool c_exists, int c, int[,] inputArray, int[,] outputArray, int row, int col)
