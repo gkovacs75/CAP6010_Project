@@ -23,8 +23,6 @@ namespace CAP6010_Project
     /// </summary>
     public partial class MainWindow : Window
     {
-        List<Predictor> predictors = new List<Predictor>();
-
         public MainWindow()
         {
             InitializeComponent();
@@ -62,17 +60,25 @@ namespace CAP6010_Project
 
                 sb.Append(String.Format("<h3>Predictor {0}: {1} </h3>", predictor, String.Format(@"<img src='..\..\Images\Predictor{0}.png' align='middle'>", predictor)));
 
-                List<string> binaryStrings = ConvertToHuffmanCode(listOfCompressedImages[predictor - 1], huffmanTable, out int compressedSizeInBits);
+                List<string> huffmanEncodedImage = HuffmanEncode(listOfCompressedImages[predictor - 1], huffmanTable, out int compressedSizeInBits);
 
                 sb.Append("<p>");
                 sb.Append("<h4>Compressed Binary Sequence:</h4>");
-                foreach (string binaryString in binaryStrings)
+
+                foreach (string row in huffmanEncodedImage)
                 {
-                    sb.Append(binaryString);
+                    sb.Append(row);
                     sb.Append("<br>");
                 }
+
                 sb.Append("</p>");
                 sb.Append("<br>");
+
+                // Decode the Huffman Encoded Image
+                int[,] compressedImage = HuffmanDecode(huffmanEncodedImage, huffmanTable);
+
+                // Decompress Image
+
 
                 float compressionRatio = (float)unCompressedSizeInBits / (float)compressedSizeInBits;
                 float bitsPerPixel = 8 / compressionRatio;
@@ -84,7 +90,7 @@ namespace CAP6010_Project
                 sb.Append("Bits/Pixel: ");
                 sb.Append("8 / " + compressionRatio.ToString() + " = " + bitsPerPixel.ToString());
                 sb.Append("<br>");
-                sb.Append("RMS: ");
+                sb.Append("RMS Error: ");
                 sb.Append("[rms value holder]");
                 sb.Append("<br>");
                 sb.Append("</p>");
@@ -512,27 +518,27 @@ namespace CAP6010_Project
         }
 
         /// <summary>
-        /// Take the compressed integers and convert them to Huffman values
+        /// Take the compressed image and convert them to Huffman values
         /// </summary>
-        /// <param name="convertedIntegers"></param>
+        /// <param name="compressedImage"></param>
         /// <param name="huffmanTable"></param>
         /// <returns></returns>
-        private List<string> ConvertToHuffmanCode(int[,] convertedIntegers, Dictionary<string, string> huffmanTable, out int compressedSizeInBits)
+        private List<string> HuffmanEncode(int[,] compressedImage, Dictionary<string, string> huffmanTable, out int compressedSizeInBits)
         {
             compressedSizeInBits = 0;
 
             List<string> huffmanCodeList = new List<string>();
 
             // Loop through rows
-            for (int row = 0; row < convertedIntegers.GetLength(0); row++)
+            for (int row = 0; row < compressedImage.GetLength(0); row++)
             {
                 StringBuilder rowOfHuffmanCodes = new StringBuilder();
                 rowOfHuffmanCodes.Clear();
 
                 // Loop through columns
-                for (int col = 0; col < convertedIntegers.GetLength(1); col++)
+                for (int col = 0; col < compressedImage.GetLength(1); col++)
                 {
-                    int valueToEncode = convertedIntegers[row, col];
+                    int valueToEncode = compressedImage[row, col];
                     string encodedValue;
 
                     // Check the Huffman table to see if the code exists
@@ -556,6 +562,87 @@ namespace CAP6010_Project
             }
 
             return huffmanCodeList;
+        }
+
+
+        private int[,] HuffmanDecode(List<string> huffmanEncodedImage, Dictionary<string, string> huffmanTable)
+        {
+            // Get the first row from the list of binary strings
+            string firstRow = huffmanEncodedImage[0];
+            // Get the first byte, this value is not a Huffman value but rather an actual value
+            string firstByte = firstRow.Substring(0, 8);
+            // Remove this first byte
+            huffmanEncodedImage[0] = firstRow.Substring(8, firstRow.Length - 8);
+            // Loop through the remaining rows of the binary strings
+            foreach (string row in huffmanEncodedImage)
+            {
+                string v1 = huffmanTable["-6"];
+                int v1Length = huffmanTable["-6"].Length;
+
+                string v2 = huffmanTable["6"];
+                int v2Length = huffmanTable["6"].Length;
+
+                string v3 = huffmanTable["-5"];
+                int v3Length = huffmanTable["-5"].Length;
+
+                string v4 = huffmanTable["5"];
+                int v4Length = huffmanTable["5"].Length;
+
+                string v6 = huffmanTable["-4"];
+                int v6Length = huffmanTable["-4"].Length;
+
+                string v7 = huffmanTable["4"];
+                int v7Length = huffmanTable["4"].Length;
+
+                string v8 = huffmanTable["-3"];
+                int v8Length = huffmanTable["-3"].Length;
+
+                string v9 = huffmanTable["3"];
+                int v9Length = huffmanTable["3"].Length;
+
+                string v10 = huffmanTable["-2"];
+                int v10Length = huffmanTable["-2"].Length;
+
+                string v11 = huffmanTable["2"];
+                int v11Length = huffmanTable["2"].Length;
+
+                string v12 = huffmanTable["-1"];
+                int v12Length = huffmanTable["-1"].Length;
+
+                string v13 = huffmanTable["1"];
+                int v13Length = huffmanTable["1"].Length;
+
+                string v14 = huffmanTable["0"];
+                int v14Length = huffmanTable["0"].Length;
+
+                int position = 0;
+
+                //while (position < row.Length)
+                //{
+                //    int index = row.IndexOf(v1, position);
+
+                //    if (index != -1)
+                //    {
+                //        string decodedValue = row.Substring(index, v1Length);
+                //    }
+
+                //    position += v1Length;
+                //}
+
+                if (row.StartsWith(v1))
+                {
+                    //string decodedValue = row.Substring(position, v1Length);
+                    position += v1Length;
+                }
+                if (row.StartsWith(v2))
+                {
+                    //string decodedValue = row.Substring(position, v1Length);
+                    position += v1Length;
+                }
+            }
+
+
+            return null;
         }
     }
 }
