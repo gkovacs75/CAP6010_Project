@@ -105,6 +105,11 @@ namespace CAP6010_Project
             Application.Current.Shutdown();
         }
 
+        /// <summary>
+        /// Imports a file of comma separated values
+        /// </summary>
+        /// <param name="inputFileSizeInBits">Size (in bits) of the import data</param>
+        /// <returns>a 2D array of the imported values</returns>
         private int[,] ImportCSV(out int inputFileSizeInBits)
         {
             inputFileSizeInBits = 0;
@@ -240,6 +245,8 @@ namespace CAP6010_Project
 
             return outputs;
         }
+
+        #region Predictors
 
         private void UsePredictor1(bool a_exists, int a, bool b_exists, int b, bool c_exists, int c, int[,] inputArray, int[,] outputArray, int row, int col)
         {
@@ -404,6 +411,9 @@ namespace CAP6010_Project
             }
         }
 
+        #endregion
+
+        #region Predictor Helpers
 
         /// <summary>
         /// Check if there is a value to the left of the current cell
@@ -492,6 +502,8 @@ namespace CAP6010_Project
             }
         }
 
+        #endregion
+
         /// <summary>
         /// Creates the Huffman table in a Dictionary object
         /// </summary>
@@ -500,19 +512,19 @@ namespace CAP6010_Project
         {
             Dictionary<string, string> huffmanTable = new Dictionary<string, string>();
 
-            huffmanTable.Add("0", "1");
-            huffmanTable.Add("1", "00");
-            huffmanTable.Add("-1", "011");
-            huffmanTable.Add("2", "0100");
-            huffmanTable.Add("-2", "01011");
-            huffmanTable.Add("3", "010100");
-            huffmanTable.Add("-3", "0101011");
-            huffmanTable.Add("4", "01010100");
-            huffmanTable.Add("-4", "010101011");
-            huffmanTable.Add("5", "0101010100");
-            huffmanTable.Add("-5", "01010101011");
-            huffmanTable.Add("6", "010101010100");
-            huffmanTable.Add("-6", "0101010101011");
+            huffmanTable.Add("1", "0");
+            huffmanTable.Add("00", "1");
+            huffmanTable.Add("011", "-1");
+            huffmanTable.Add("0100", "2");
+            huffmanTable.Add("01011", "-2");
+            huffmanTable.Add("010100", "3");
+            huffmanTable.Add("0101011", "-3");
+            huffmanTable.Add("01010100", "4");
+            huffmanTable.Add("010101011", "-4");
+            huffmanTable.Add("0101010100", "5");
+            huffmanTable.Add("01010101011", "-5");
+            huffmanTable.Add("010101010100", "6");
+            huffmanTable.Add("0101010101011", "-6");
 
             return huffmanTable;
         }
@@ -541,11 +553,12 @@ namespace CAP6010_Project
                     int valueToEncode = compressedImage[row, col];
                     string encodedValue;
 
-                    // Check the Huffman table to see if the code exists
-                    if (huffmanTable.ContainsKey(valueToEncode.ToString()))
+                    // Check the Huffman table to see if the value exists
+                    if (huffmanTable.ContainsValue(valueToEncode.ToString()))
                     {
                         // If it exists, append it to the output list
-                        encodedValue = huffmanTable[valueToEncode.ToString()];
+                        encodedValue = huffmanTable.FirstOrDefault(x => x.Value == valueToEncode.ToString()).Key;
+                        //encodedValue = huffmanTable[valueToEncode.ToString()];
                     }
                     else
                     {
@@ -567,80 +580,49 @@ namespace CAP6010_Project
 
         private int[,] HuffmanDecode(List<string> huffmanEncodedImage, Dictionary<string, string> huffmanTable)
         {
+            // Create the output array. The no. of rows will be the same as in huffmanEncodedImage. The no. of columns will need to be calculated.
+            int[,] output = new int[huffmanEncodedImage.Count, 4];
+
             // Get the first row from the list of binary strings
             string firstRow = huffmanEncodedImage[0];
             // Get the first byte, this value is not a Huffman value but rather an actual value
             string firstByte = firstRow.Substring(0, 8);
+            // Covert that byte into an int
+            int firstValue = Convert.ToInt32(firstByte, 2);
+            // Write the first value to the output array
+            output[0, 0] = firstValue;
+
             // Remove this first byte
             huffmanEncodedImage[0] = firstRow.Substring(8, firstRow.Length - 8);
-            // Loop through the remaining rows of the binary strings
+
+            int rowNumber = 0;
+            int colNumber = 1; // Start at column 1 since we already filled in the first value
+
             foreach (string row in huffmanEncodedImage)
             {
-                string v1 = huffmanTable["-6"];
-                int v1Length = huffmanTable["-6"].Length;
+                string key = String.Empty;
 
-                string v2 = huffmanTable["6"];
-                int v2Length = huffmanTable["6"].Length;
-
-                string v3 = huffmanTable["-5"];
-                int v3Length = huffmanTable["-5"].Length;
-
-                string v4 = huffmanTable["5"];
-                int v4Length = huffmanTable["5"].Length;
-
-                string v6 = huffmanTable["-4"];
-                int v6Length = huffmanTable["-4"].Length;
-
-                string v7 = huffmanTable["4"];
-                int v7Length = huffmanTable["4"].Length;
-
-                string v8 = huffmanTable["-3"];
-                int v8Length = huffmanTable["-3"].Length;
-
-                string v9 = huffmanTable["3"];
-                int v9Length = huffmanTable["3"].Length;
-
-                string v10 = huffmanTable["-2"];
-                int v10Length = huffmanTable["-2"].Length;
-
-                string v11 = huffmanTable["2"];
-                int v11Length = huffmanTable["2"].Length;
-
-                string v12 = huffmanTable["-1"];
-                int v12Length = huffmanTable["-1"].Length;
-
-                string v13 = huffmanTable["1"];
-                int v13Length = huffmanTable["1"].Length;
-
-                string v14 = huffmanTable["0"];
-                int v14Length = huffmanTable["0"].Length;
-
-                int position = 0;
-
-                //while (position < row.Length)
-                //{
-                //    int index = row.IndexOf(v1, position);
-
-                //    if (index != -1)
-                //    {
-                //        string decodedValue = row.Substring(index, v1Length);
-                //    }
-
-                //    position += v1Length;
-                //}
-
-                if (row.StartsWith(v1))
+                foreach (char bit in row)
                 {
-                    //string decodedValue = row.Substring(position, v1Length);
-                    position += v1Length;
+                    key += bit.ToString();
+
+                    if (huffmanTable.ContainsKey(key))
+                    {
+                        output[rowNumber, colNumber] = int.Parse(huffmanTable[key]);
+
+                        // Value found, increment column index
+                        colNumber++;
+                        key = String.Empty;
+                    }
+                    else
+                    {
+
+                    }
                 }
-                if (row.StartsWith(v2))
-                {
-                    //string decodedValue = row.Substring(position, v1Length);
-                    position += v1Length;
-                }
+
+                rowNumber++;
+                colNumber = 0; // Reset column for output
             }
-
 
             return null;
         }
