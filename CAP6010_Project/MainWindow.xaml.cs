@@ -23,6 +23,10 @@ namespace CAP6010_Project
     /// </summary>
     public partial class MainWindow : Window
     {
+        // These are calculated from the import file and then used to create the output file
+        private int numberOfRows;
+        private int numberOfColumns;
+
         public MainWindow()
         {
             InitializeComponent();
@@ -48,10 +52,13 @@ namespace CAP6010_Project
 
             sb.Append("<h3>Original Image:</h3>");
 
+            // Read the image from file
             int[,] originalImageArray = ImportCSV(out int unCompressedSizeInBits);
 
+            // Print the original image
             Print2DArray(sb, originalImageArray);
 
+            // Compress the image
             List<int[,]> listOfCompressedImages = CompressImage(originalImageArray);
 
             for (int predictor = 1; predictor <= 7; predictor++)
@@ -78,7 +85,7 @@ namespace CAP6010_Project
                 int[,] compressedImage = HuffmanDecode(huffmanEncodedImage, huffmanTable);
 
                 // Decompress Image
-
+                int[,] deCompressedImage = DecompressImage(compressedImage);
 
                 float compressionRatio = (float)unCompressedSizeInBits / (float)compressedSizeInBits;
                 float bitsPerPixel = 8 / compressionRatio;
@@ -104,7 +111,7 @@ namespace CAP6010_Project
 
             Application.Current.Shutdown();
         }
-
+        
         /// <summary>
         /// Imports a file of comma separated values
         /// </summary>
@@ -130,10 +137,14 @@ namespace CAP6010_Project
 
             int rowIndex = 0;
 
+            // Get the total number of rows in the import file
             string[] rows = csvData.Split("\r\n".ToCharArray(), StringSplitOptions.RemoveEmptyEntries);
-            int numCells = (rows[0].Split(',')).Count();
+            this.numberOfRows = rows.Count();
 
-            int[,] array = new int[rows.Count(), numCells];
+            // Get the total number of columns/cells in the import file
+            this.numberOfColumns = (rows[0].Split(',')).Count();
+
+            int[,] array = new int[numberOfRows, this.numberOfColumns];
 
             foreach (string row in rows)
             {
@@ -152,7 +163,8 @@ namespace CAP6010_Project
             }
 
             // Calculate the size (in bits) of the import data
-            inputFileSizeInBits = rows.Count() * numCells * 8;
+            // Should be 16x16x8 for the project test image
+            inputFileSizeInBits = this.numberOfRows * this.numberOfColumns * 8;
 
             return array;
         }
@@ -183,14 +195,13 @@ namespace CAP6010_Project
         }
 
         /// <summary>
-        /// Compress values with specified predictor
+        /// Compress the supplied image with 7 different predictors
         /// </summary>
-        /// <param name="inputArray">2D Input Array</param>
-        /// <param name="predictor">Predictor value (1-7) to use for conversion</param>
-        /// <returns></returns>
-        private List<int[,]> CompressImage(int[,] inputArray)
+        /// <param name="imageArray"></param>
+        /// <returns>A list of 7 compressed images</returns>
+        private List<int[,]> CompressImage(int[,] imageArray)
         {
-            if (inputArray == null)
+            if (imageArray == null)
             {
                 return null;
             }
@@ -199,8 +210,8 @@ namespace CAP6010_Project
             List<int[,]> outputs = new List<int[,]>();
 
             // Create the 7 output arrays and make it the same size as the input array
-            int dim1 = inputArray.GetLength(0);
-            int dim2 = inputArray.GetLength(1);
+            int dim1 = imageArray.GetLength(0);
+            int dim2 = imageArray.GetLength(1);
 
             // Output for all 7 2D arrays
             int[,] outputArrayForPredictor1 = new int[dim1, dim2];
@@ -218,20 +229,20 @@ namespace CAP6010_Project
                 for (int col = 0; col < dim2; col++)
                 {
                     // Check if A exists, if so, get it's value
-                    bool a_exists = TryGetA(inputArray, row, col, out int a);
+                    bool a_exists = TryGetA(imageArray, row, col, out int a);
                     // Check if B exists, if so, get it's value
-                    bool b_exists = TryGetB(inputArray, row, col, out int b);
+                    bool b_exists = TryGetB(imageArray, row, col, out int b);
                     // Check if C exists, if so, get it's value
-                    bool c_exists = TryGetC(inputArray, row, col, out int c);
+                    bool c_exists = TryGetC(imageArray, row, col, out int c);
 
                     // Run each of the 7 predictors
-                    UsePredictor1(a_exists, a, b_exists, b, c_exists, c, inputArray, outputArrayForPredictor1, row, col);
-                    UsePredictor2(a_exists, a, b_exists, b, c_exists, c, inputArray, outputArrayForPredictor2, row, col);
-                    UsePredictor3(a_exists, a, b_exists, b, c_exists, c, inputArray, outputArrayForPredictor3, row, col);
-                    UsePredictor4(a_exists, a, b_exists, b, c_exists, c, inputArray, outputArrayForPredictor4, row, col);
-                    UsePredictor5(a_exists, a, b_exists, b, c_exists, c, inputArray, outputArrayForPredictor5, row, col);
-                    UsePredictor6(a_exists, a, b_exists, b, c_exists, c, inputArray, outputArrayForPredictor6, row, col);
-                    UsePredictor7(a_exists, a, b_exists, b, c_exists, c, inputArray, outputArrayForPredictor7, row, col);
+                    UsePredictor1(a_exists, a, b_exists, b, c_exists, c, imageArray, outputArrayForPredictor1, row, col);
+                    UsePredictor2(a_exists, a, b_exists, b, c_exists, c, imageArray, outputArrayForPredictor2, row, col);
+                    UsePredictor3(a_exists, a, b_exists, b, c_exists, c, imageArray, outputArrayForPredictor3, row, col);
+                    UsePredictor4(a_exists, a, b_exists, b, c_exists, c, imageArray, outputArrayForPredictor4, row, col);
+                    UsePredictor5(a_exists, a, b_exists, b, c_exists, c, imageArray, outputArrayForPredictor5, row, col);
+                    UsePredictor6(a_exists, a, b_exists, b, c_exists, c, imageArray, outputArrayForPredictor6, row, col);
+                    UsePredictor7(a_exists, a, b_exists, b, c_exists, c, imageArray, outputArrayForPredictor7, row, col);
                 }
             }
 
@@ -244,6 +255,11 @@ namespace CAP6010_Project
             outputs.Add(outputArrayForPredictor7);
 
             return outputs;
+        }
+
+        private int[,] DecompressImage(int[,] compressedImage)
+        {
+            throw new NotImplementedException();
         }
 
         #region Predictors
@@ -580,8 +596,8 @@ namespace CAP6010_Project
 
         private int[,] HuffmanDecode(List<string> huffmanEncodedImage, Dictionary<string, string> huffmanTable)
         {
-            // Create the output array. The no. of rows will be the same as in huffmanEncodedImage. The no. of columns will need to be calculated.
-            int[,] output = new int[huffmanEncodedImage.Count, 4];
+            // Create the output array. Use values we calculated when we read in the file.
+            int[,] output = new int[this.numberOfRows, this.numberOfColumns];
 
             // Get the first row from the list of binary strings
             string firstRow = huffmanEncodedImage[0];
@@ -604,6 +620,7 @@ namespace CAP6010_Project
 
                 foreach (char bit in row)
                 {
+                    // Build the key from the bits in the row until it becomes a legit Huffman value
                     key += bit.ToString();
 
                     if (huffmanTable.ContainsKey(key))
@@ -624,7 +641,7 @@ namespace CAP6010_Project
                 colNumber = 0; // Reset column for output
             }
 
-            return null;
+            return output;
         }
     }
 }
