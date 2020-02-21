@@ -75,7 +75,7 @@ namespace CAP6010_Project
                 int[,] huffmanDecodedImage = HuffmanDecode(huffmanEncodedImage, huffmanTable);
 
                 // Decompress Image
-                int[,] deCompressedImage = DecompressImage(huffmanDecodedImage);
+                int[,] deCompressedImage = DecompressImage(predictor, huffmanDecodedImage);
 
                 PrintStats(sb, unCompressedSizeInBits, compressedSizeInBits);
 
@@ -209,17 +209,17 @@ namespace CAP6010_Project
         /// Compress an image
         /// </summary>
         /// <param name="predictor"></param>
-        /// <param name="imageArray"></param>
+        /// <param name="originalImage"></param>
         /// <returns></returns>
-        private int[,] CompressImage(int predictor, int[,] imageArray)
+        private int[,] CompressImage(int predictor, int[,] originalImage)
         {
-            if (imageArray == null)
+            if (originalImage == null)
             {
                 return null;
             }
 
-            int dim1 = imageArray.GetLength(0);
-            int dim2 = imageArray.GetLength(1);
+            int dim1 = originalImage.GetLength(0);
+            int dim2 = originalImage.GetLength(1);
 
             int[,] compressedImage = new int[dim1, dim2];
 
@@ -230,49 +230,113 @@ namespace CAP6010_Project
                 for (int col = 0; col < dim2; col++)
                 {
                     // Check if A exists, if so, get it's value
-                    bool a_exists = TryGetA(imageArray, row, col, out int a);
+                    bool a_exists = TryGetA(originalImage, row, col, out int a);
                     // Check if B exists, if so, get it's value
-                    bool b_exists = TryGetB(imageArray, row, col, out int b);
+                    bool b_exists = TryGetB(originalImage, row, col, out int b);
                     // Check if C exists, if so, get it's value
-                    bool c_exists = TryGetC(imageArray, row, col, out int c);
+                    bool c_exists = TryGetC(originalImage, row, col, out int c);
 
-                    int v = 0;
+                    int yhat = 0;
 
                     switch (predictor)
                     {
                         case 1:
-                            v = Predictor1(a_exists, a, b_exists, b, c_exists, c);
+                            yhat = Predictor1(a_exists, a, b_exists, b, c_exists, c);
                             break;
                         case 2:
-                            v = Predictor2(a_exists, a, b_exists, b, c_exists, c);
+                            yhat = Predictor2(a_exists, a, b_exists, b, c_exists, c);
                             break;
                         case 3:
-                            v = Predictor3(a_exists, a, b_exists, b, c_exists, c);
+                            yhat = Predictor3(a_exists, a, b_exists, b, c_exists, c);
                             break;
                         case 4:
-                            v = Predictor4(a_exists, a, b_exists, b, c_exists, c);
+                            yhat = Predictor4(a_exists, a, b_exists, b, c_exists, c);
                             break;
                         case 5:
-                            v = Predictor5(a_exists, a, b_exists, b, c_exists, c);
+                            yhat = Predictor5(a_exists, a, b_exists, b, c_exists, c);
                             break;
                         case 6:
-                            v = Predictor6(a_exists, a, b_exists, b, c_exists, c);
+                            yhat = Predictor6(a_exists, a, b_exists, b, c_exists, c);
                             break;
                         case 7:
-                            v = Predictor7(a_exists, a, b_exists, b, c_exists, c);
+                            yhat = Predictor7(a_exists, a, b_exists, b, c_exists, c);
                             break;
                     }
 
-                    compressedImage[row, col] = (int)(imageArray[row, col] - v);
+                    compressedImage[row, col] = (int)(originalImage[row, col] - yhat);
                 }
             }
 
             return compressedImage;
         }
 
-        private int[,] DecompressImage(int[,] compressedImage)
+        private int[,] DecompressImage(int predictor, int[,] compressedImage)
         {
-            return null;
+            if (compressedImage == null)
+            {
+                return null;
+            }
+
+            int dim1 = compressedImage.GetLength(0);
+            int dim2 = compressedImage.GetLength(1);
+
+            int[,] decompressedImage = new int[dim1, dim2];
+
+            // Loop through rows
+            for (int row = 0; row < dim1; row++)
+            {
+                // Loop through columns
+                for (int col = 0; col < dim2; col++)
+                {
+                    // Check if A exists, if so, get it's value
+                    bool a_exists = TryGetA(compressedImage, row, col, out int a);
+                    // Check if B exists, if so, get it's value
+                    bool b_exists = TryGetB(compressedImage, row, col, out int b);
+                    // Check if C exists, if so, get it's value
+                    bool c_exists = TryGetC(compressedImage, row, col, out int c);
+
+                    int yhat = 0;
+
+                    switch (predictor)
+                    {
+                        case 1:
+                            yhat = Predictor1(a_exists, a, b_exists, b, c_exists, c);
+                            break;
+                        case 2:
+                            yhat = Predictor2(a_exists, a, b_exists, b, c_exists, c);
+                            break;
+                        case 3:
+                            yhat = Predictor3(a_exists, a, b_exists, b, c_exists, c);
+                            break;
+                        case 4:
+                            yhat = Predictor4(a_exists, a, b_exists, b, c_exists, c);
+                            break;
+                        case 5:
+                            yhat = Predictor5(a_exists, a, b_exists, b, c_exists, c);
+                            break;
+                        case 6:
+                            yhat = Predictor6(a_exists, a, b_exists, b, c_exists, c);
+                            break;
+                        case 7:
+                            yhat = Predictor7(a_exists, a, b_exists, b, c_exists, c);
+                            break;
+                    }
+
+                    decompressedImage[row, col] = (int)(compressedImage[row, col] + yhat);
+
+                    //if (row == 0 && col == 0)
+                    //{
+                    //    decompressedImage[row, col] = (int)(compressedImage[row, col]);
+                    //}
+                    //else
+                    //{
+                    //    decompressedImage[row, col] = (int)(compressedImage[row, col] + yhat);
+                    //}
+
+                }
+            }
+
+            return decompressedImage;
         }
 
         #region Predictors
