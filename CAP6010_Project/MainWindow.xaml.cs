@@ -58,7 +58,7 @@ namespace CAP6010_Project
             // Print the original image
             Print2DArray(sb, originalImageArray);
 
-            // Compress the image
+            // Compress the image using 7 different predictors
             List<int[,]> listOfCompressedImages = CompressImage(originalImageArray);
 
             for (int predictor = 1; predictor <= 7; predictor++)
@@ -67,11 +67,13 @@ namespace CAP6010_Project
 
                 sb.Append(String.Format("<h3>Predictor {0}: {1} </h3>", predictor, String.Format(@"<img src='..\..\Images\Predictor{0}.png' align='middle'>", predictor)));
 
+                // Huffman encode the compressed image
                 List<string> huffmanEncodedImage = HuffmanEncode(listOfCompressedImages[predictor - 1], huffmanTable, out int compressedSizeInBits);
 
                 sb.Append("<p>");
                 sb.Append("<h4>Compressed Binary Sequence:</h4>");
 
+                // Print each row of the Huffman encoded image
                 foreach (string row in huffmanEncodedImage)
                 {
                     sb.Append(row);
