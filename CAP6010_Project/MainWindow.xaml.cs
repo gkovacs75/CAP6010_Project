@@ -58,51 +58,26 @@ namespace CAP6010_Project
             // Print the original image
             Print2DArray(sb, originalImageArray);
 
-            // Compress the image using 7 different predictors
-            List<int[,]> listOfCompressedImages = CompressImage(originalImageArray);
-
             for (int predictor = 1; predictor <= 7; predictor++)
             {
+                int[,] compressedImage = CompressImage(predictor, originalImageArray);
+
                 sb.Append("<div style='border:1px solid black;margin-bottom:25px;padding:10px 10px 10px 30px;'>");
 
                 sb.Append(String.Format("<h3>Predictor {0}: {1} </h3>", predictor, String.Format(@"<img src='..\..\Images\Predictor{0}.png' align='middle'>", predictor)));
 
                 // Huffman encode the compressed image
-                List<string> huffmanEncodedImage = HuffmanEncode(listOfCompressedImages[predictor - 1], huffmanTable, out int compressedSizeInBits);
+                List<string> huffmanEncodedImage = HuffmanEncode(compressedImage, huffmanTable, out int compressedSizeInBits);
 
-                sb.Append("<p>");
-                sb.Append("<h4>Compressed Binary Sequence:</h4>");
-
-                // Print each row of the Huffman encoded image
-                foreach (string row in huffmanEncodedImage)
-                {
-                    sb.Append(row);
-                    sb.Append("<br>");
-                }
-
-                sb.Append("</p>");
-                sb.Append("<br>");
+                PrintHuffmanEncodedImage(sb, huffmanEncodedImage);
 
                 // Decode the Huffman Encoded Image
-                int[,] compressedImage = HuffmanDecode(huffmanEncodedImage, huffmanTable);
+                int[,] huffmanDecodedImage = HuffmanDecode(huffmanEncodedImage, huffmanTable);
 
                 // Decompress Image
-                int[,] deCompressedImage = DecompressImage(compressedImage);
+                int[,] deCompressedImage = DecompressImage(huffmanDecodedImage);
 
-                float compressionRatio = (float)unCompressedSizeInBits / (float)compressedSizeInBits;
-                float bitsPerPixel = 8 / compressionRatio;
-
-                sb.Append("<p>");
-                sb.Append("Compression Ratio: ");
-                sb.Append(((float)unCompressedSizeInBits).ToString() + " / " + ((float)compressedSizeInBits).ToString() + " = " + compressionRatio.ToString());
-                sb.Append("<br>");
-                sb.Append("Bits/Pixel: ");
-                sb.Append("8 / " + compressionRatio.ToString() + " = " + bitsPerPixel.ToString());
-                sb.Append("<br>");
-                sb.Append("RMS Error: ");
-                sb.Append("[rms value holder]");
-                sb.Append("<br>");
-                sb.Append("</p>");
+                PrintStats(sb, unCompressedSizeInBits, compressedSizeInBits);
 
                 sb.Append("</div>");
             }
@@ -113,7 +88,7 @@ namespace CAP6010_Project
 
             Application.Current.Shutdown();
         }
-        
+
         /// <summary>
         /// Imports a file of comma separated values
         /// </summary>
@@ -196,33 +171,57 @@ namespace CAP6010_Project
             sb.Append("<br>");
         }
 
+        private void PrintHuffmanEncodedImage(StringBuilder sb, List<string> huffmanEncodedImage)
+        {
+            sb.Append("<p>");
+            sb.Append("<h4>Compressed Binary Sequence:</h4>");
+
+            // Print each row of the Huffman encoded image
+            foreach (string row in huffmanEncodedImage)
+            {
+                sb.Append(row);
+                sb.Append("<br>");
+            }
+
+            sb.Append("</p>");
+            sb.Append("<br>");
+        }
+
+        private void PrintStats(StringBuilder sb, int unCompressedSizeInBits, int compressedSizeInBits)
+        {
+            float compressionRatio = (float)unCompressedSizeInBits / (float)compressedSizeInBits;
+            float bitsPerPixel = 8 / compressionRatio;
+
+            sb.Append("<p>");
+            sb.Append("Compression Ratio: ");
+            sb.Append(((float)unCompressedSizeInBits).ToString() + " / " + ((float)compressedSizeInBits).ToString() + " = " + compressionRatio.ToString());
+            sb.Append("<br>");
+            sb.Append("Bits/Pixel: ");
+            sb.Append("8 / " + compressionRatio.ToString() + " = " + bitsPerPixel.ToString());
+            sb.Append("<br>");
+            sb.Append("RMS Error: ");
+            sb.Append("[rms value holder]");
+            sb.Append("<br>");
+            sb.Append("</p>");
+        }
+
         /// <summary>
-        /// Compress the supplied image with 7 different predictors
+        /// Compress an image
         /// </summary>
+        /// <param name="predictor"></param>
         /// <param name="imageArray"></param>
-        /// <returns>A list of 7 compressed images</returns>
-        private List<int[,]> CompressImage(int[,] imageArray)
+        /// <returns></returns>
+        private int[,] CompressImage(int predictor, int[,] imageArray)
         {
             if (imageArray == null)
             {
                 return null;
             }
 
-            // Create a list that will hold the 7 outputs
-            List<int[,]> outputs = new List<int[,]>();
-
-            // Create the 7 output arrays and make it the same size as the input array
             int dim1 = imageArray.GetLength(0);
             int dim2 = imageArray.GetLength(1);
 
-            // Output for all 7 2D arrays
-            int[,] outputArrayForPredictor1 = new int[dim1, dim2];
-            int[,] outputArrayForPredictor2 = new int[dim1, dim2];
-            int[,] outputArrayForPredictor3 = new int[dim1, dim2];
-            int[,] outputArrayForPredictor4 = new int[dim1, dim2];
-            int[,] outputArrayForPredictor5 = new int[dim1, dim2];
-            int[,] outputArrayForPredictor6 = new int[dim1, dim2];
-            int[,] outputArrayForPredictor7 = new int[dim1, dim2];
+            int[,] compressedImage = new int[dim1, dim2];
 
             // Loop through rows
             for (int row = 0; row < dim1; row++)
@@ -237,194 +236,206 @@ namespace CAP6010_Project
                     // Check if C exists, if so, get it's value
                     bool c_exists = TryGetC(imageArray, row, col, out int c);
 
-                    // Run each of the 7 predictors
-                    UsePredictor1(a_exists, a, b_exists, b, c_exists, c, imageArray, outputArrayForPredictor1, row, col);
-                    UsePredictor2(a_exists, a, b_exists, b, c_exists, c, imageArray, outputArrayForPredictor2, row, col);
-                    UsePredictor3(a_exists, a, b_exists, b, c_exists, c, imageArray, outputArrayForPredictor3, row, col);
-                    UsePredictor4(a_exists, a, b_exists, b, c_exists, c, imageArray, outputArrayForPredictor4, row, col);
-                    UsePredictor5(a_exists, a, b_exists, b, c_exists, c, imageArray, outputArrayForPredictor5, row, col);
-                    UsePredictor6(a_exists, a, b_exists, b, c_exists, c, imageArray, outputArrayForPredictor6, row, col);
-                    UsePredictor7(a_exists, a, b_exists, b, c_exists, c, imageArray, outputArrayForPredictor7, row, col);
+                    int v = 0;
+
+                    switch (predictor)
+                    {
+                        case 1:
+                            v = Predictor1(a_exists, a, b_exists, b, c_exists, c);
+                            break;
+                        case 2:
+                            v = Predictor2(a_exists, a, b_exists, b, c_exists, c);
+                            break;
+                        case 3:
+                            v = Predictor3(a_exists, a, b_exists, b, c_exists, c);
+                            break;
+                        case 4:
+                            v = Predictor4(a_exists, a, b_exists, b, c_exists, c);
+                            break;
+                        case 5:
+                            v = Predictor5(a_exists, a, b_exists, b, c_exists, c);
+                            break;
+                        case 6:
+                            v = Predictor6(a_exists, a, b_exists, b, c_exists, c);
+                            break;
+                        case 7:
+                            v = Predictor7(a_exists, a, b_exists, b, c_exists, c);
+                            break;
+                    }
+
+                    compressedImage[row, col] = (int)(imageArray[row, col] - v);
                 }
             }
 
-            outputs.Add(outputArrayForPredictor1);
-            outputs.Add(outputArrayForPredictor2);
-            outputs.Add(outputArrayForPredictor3);
-            outputs.Add(outputArrayForPredictor4);
-            outputs.Add(outputArrayForPredictor5);
-            outputs.Add(outputArrayForPredictor6);
-            outputs.Add(outputArrayForPredictor7);
-
-            return outputs;
+            return compressedImage;
         }
 
         private int[,] DecompressImage(int[,] compressedImage)
         {
-            throw new NotImplementedException();
+            return null;
         }
 
         #region Predictors
 
-        private void UsePredictor1(bool a_exists, int a, bool b_exists, int b, bool c_exists, int c, int[,] inputArray, int[,] outputArray, int row, int col)
+        private int Predictor1(bool a_exists, int a, bool b_exists, int b, bool c_exists, int c)
         {
             // If 'a' exists, then x-hat = x-a
             if (a_exists)
             {
-                outputArray[row, col] = (int)(inputArray[row, col] - a);
+                return a;
             }
             else
             {
                 if (b_exists)
                 {
-                    outputArray[row, col] = (int)(inputArray[row, col] - b);
+                    return b;
                 }
                 else
                 {
                     // Use the same value
-                    outputArray[row, col] = inputArray[row, col];
+                    return 0;
                 }
             }
         }
 
-        private void UsePredictor2(bool a_exists, int a, bool b_exists, int b, bool c_exists, int c, int[,] inputArray, int[,] outputArray, int row, int col)
+        private int Predictor2(bool a_exists, int a, bool b_exists, int b, bool c_exists, int c)
         {
             // If 'b' exists, then x-hat = x-a
             if (b_exists)
             {
-                outputArray[row, col] = (int)(inputArray[row, col] - b);
+                return b;
             }
             else
             {
                 if (a_exists)
                 {
-                    outputArray[row, col] = (int)(inputArray[row, col] - a);
+                    return a;
                 }
                 else
                 {
                     // Use the same value
-                    outputArray[row, col] = inputArray[row, col];
+                    return 0;
                 }
             }
         }
 
-        private void UsePredictor3(bool a_exists, int a, bool b_exists, int b, bool c_exists, int c, int[,] inputArray, int[,] outputArray, int row, int col)
+        private int Predictor3(bool a_exists, int a, bool b_exists, int b, bool c_exists, int c)
         {
             // If 'c' exists, then x-hat = x-c
             if (c_exists)
             {
-                outputArray[row, col] = (int)(inputArray[row, col] - c);
+                return c;
             }
             else
             {
                 if (a_exists)
                 {
-                    outputArray[row, col] = (int)(inputArray[row, col] - a);
+                    return a;
                 }
                 else if (b_exists)
                 {
-                    outputArray[row, col] = (int)(inputArray[row, col] - b);
+                    return b;
                 }
                 else
                 {
                     // Use the same value
-                    outputArray[row, col] = inputArray[row, col];
+                    return 0;
                 }
             }
         }
 
-        private void UsePredictor4(bool a_exists, int a, bool b_exists, int b, bool c_exists, int c, int[,] inputArray, int[,] outputArray, int row, int col)
+        private int Predictor4(bool a_exists, int a, bool b_exists, int b, bool c_exists, int c)
         {
             if (a_exists && b_exists && c_exists)
             {
-                outputArray[row, col] = (int)(inputArray[row, col] - (a + b - c));
+                return (a + b - c);
             }
             else
             {
                 if (a_exists)
                 {
-                    outputArray[row, col] = (int)(inputArray[row, col] - a);
+                    return a;
                 }
                 else if (b_exists)
                 {
-                    outputArray[row, col] = (int)(inputArray[row, col] - b);
+                    return b;
                 }
                 else
                 {
                     // Use the same value
-                    outputArray[row, col] = inputArray[row, col];
+                    return 0;
                 }
             }
         }
 
-        private void UsePredictor5(bool a_exists, int a, bool b_exists, int b, bool c_exists, int c, int[,] inputArray, int[,] outputArray, int row, int col)
+        private int Predictor5(bool a_exists, int a, bool b_exists, int b, bool c_exists, int c)
         {
             if (a_exists && b_exists && c_exists)
             {
-                outputArray[row, col] = (int)(inputArray[row, col] - (a + ((b - c) / 2)));
+                return (a + ((b - c) / 2));
             }
             else
             {
                 if (a_exists)
                 {
-                    outputArray[row, col] = (int)(inputArray[row, col] - a);
+                    return a;
                 }
                 else if (b_exists)
                 {
-                    outputArray[row, col] = (int)(inputArray[row, col] - b);
+                    return b;
                 }
                 else
                 {
                     // Use the same value
-                    outputArray[row, col] = inputArray[row, col];
+                    return 0;
                 }
             }
         }
 
-        private void UsePredictor6(bool a_exists, int a, bool b_exists, int b, bool c_exists, int c, int[,] inputArray, int[,] outputArray, int row, int col)
+        private int Predictor6(bool a_exists, int a, bool b_exists, int b, bool c_exists, int c)
         {
             if (a_exists && b_exists && c_exists)
             {
-                outputArray[row, col] = (int)(inputArray[row, col] - (b + ((a - c) / 2)));
+                return (b + ((a - c) / 2));
             }
             else
             {
                 if (a_exists)
                 {
-                    outputArray[row, col] = (int)(inputArray[row, col] - a);
+                    return a;
                 }
                 else if (b_exists)
                 {
-                    outputArray[row, col] = (int)(inputArray[row, col] - b);
+                    return b;
                 }
                 else
                 {
                     // Use the same value
-                    outputArray[row, col] = inputArray[row, col];
+                    return 0;
                 }
             }
         }
 
-        private void UsePredictor7(bool a_exists, int a, bool b_exists, int b, bool c_exists, int c, int[,] inputArray, int[,] outputArray, int row, int col)
+        private int Predictor7(bool a_exists, int a, bool b_exists, int b, bool c_exists, int c)
         {
             if (a_exists && b_exists)
             {
-                outputArray[row, col] = (int)(inputArray[row, col] - ((a + b) / 2));
+                return ((a + b) / 2);
             }
             else
             {
                 if (a_exists)
                 {
-                    outputArray[row, col] = (int)(inputArray[row, col] - a);
+                    return a;
                 }
                 else if (b_exists)
                 {
-                    outputArray[row, col] = (int)(inputArray[row, col] - b);
+                    return b;
                 }
                 else
                 {
                     // Use the same value
-                    outputArray[row, col] = inputArray[row, col];
+                    return 0;
                 }
             }
         }
@@ -548,7 +559,7 @@ namespace CAP6010_Project
         }
 
         /// <summary>
-        /// Take the compressed image and convert them to Huffman values
+        /// Convert compressed image with Huffman encoding
         /// </summary>
         /// <param name="compressedImage"></param>
         /// <param name="huffmanTable"></param>
