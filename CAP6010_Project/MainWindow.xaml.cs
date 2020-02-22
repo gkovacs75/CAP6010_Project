@@ -281,6 +281,8 @@ namespace CAP6010_Project
             int dim2 = compressedImage.GetLength(1);
 
             int[,] decompressedImage = new int[dim1, dim2];
+            
+            int previousDecompressedValue = decompressedImage[0, 0];
 
             // Loop through rows
             for (int row = 0; row < dim1; row++)
@@ -289,11 +291,11 @@ namespace CAP6010_Project
                 for (int col = 0; col < dim2; col++)
                 {
                     // Check if A exists, if so, get it's value
-                    bool a_exists = TryGetA(compressedImage, row, col, out int a);
+                    bool a_exists = TryGetA(decompressedImage, row, col, out int a);
                     // Check if B exists, if so, get it's value
-                    bool b_exists = TryGetB(compressedImage, row, col, out int b);
+                    bool b_exists = TryGetB(decompressedImage, row, col, out int b);
                     // Check if C exists, if so, get it's value
-                    bool c_exists = TryGetC(compressedImage, row, col, out int c);
+                    bool c_exists = TryGetC(decompressedImage, row, col, out int c);
 
                     int yhat = 0;
 
@@ -322,16 +324,7 @@ namespace CAP6010_Project
                             break;
                     }
 
-                    decompressedImage[row, col] = (int)(compressedImage[row, col] + yhat);
-
-                    //if (row == 0 && col == 0)
-                    //{
-                    //    decompressedImage[row, col] = (int)(compressedImage[row, col]);
-                    //}
-                    //else
-                    //{
-                    //    decompressedImage[row, col] = (int)(compressedImage[row, col] + yhat);
-                    //}
+                    decompressedImage[row, col] = yhat + compressedImage[row, col];
 
                 }
             }
