@@ -41,6 +41,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -50,6 +51,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup>
     <ManifestCertificateThumbprint>C500DAD39BC3079BB8C29B7B6A64057A5B8326CA</ManifestCertificateThumbprint>
@@ -66,6 +68,7 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
     <Reference Include="System.ValueTuple, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>..\packages\System.ValueTuple.4.5.0\lib\net461\System.ValueTuple.dll</HintPath>
     </Reference>
@@ -118,6 +121,7 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+    <None Include="Files\inputfile2.csv" />
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -143,13 +147,13 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="Images\Predictor1.png" />
-    <Resource Include="Images\Predictor2.png" />
-    <Resource Include="Images\Predictor3.png" />
-    <Resource Include="Images\Predictor4.png" />
-    <Resource Include="Images\Predictor5.png" />
-    <Resource Include="Images\Predictor6.png" />
-    <Resource Include="Images\Predictor7.png" />
+    <Resource Include="Files\Predictor1.png" />
+    <Resource Include="Files\Predictor2.png" />
+    <Resource Include="Files\Predictor3.png" />
+    <Resource Include="Files\Predictor4.png" />
+    <Resource Include="Files\Predictor5.png" />
+    <Resource Include="Files\Predictor6.png" />
+    <Resource Include="Files\Predictor7.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

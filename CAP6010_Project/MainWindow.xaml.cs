@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Drawing;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -15,6 +16,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using System.Drawing.Imaging;
 
 namespace CAP6010_Project
 {
@@ -24,8 +26,8 @@ namespace CAP6010_Project
     public partial class MainWindow : Window
     {
         // These are calculated from the import file and then used to create the output file
-        private int numberOfRows;
-        private int numberOfColumns;
+        private int imageHeight;
+        private int imageWidth;
 
         public MainWindow()
         {
@@ -45,6 +47,7 @@ namespace CAP6010_Project
             sb.Append("<!DOCTYPE html><html><body>");
             sb.Append("<h1>CAP 6010 Project Results</h1>");
             sb.Append("<h3>Gabor Kovacs</h3>");
+            sb.Append(String.Format("<h3>Generated: {0}</h3>", DateTime.Now.ToString()));
             sb.Append("<hr>");
 
 
@@ -53,21 +56,21 @@ namespace CAP6010_Project
             sb.Append("<h3>Original Image:</h3>");
 
             // Read the image from file
-            int[,] originalImageArray = ImportCSV(out int unCompressedSizeInBits);
+            int[,] originalImage = ImportCSV(out int originalImageSizeInBits);
 
             // Print the original image
-            Print2DArray(sb, originalImageArray);
+            PrintImage(sb, originalImage);
 
             for (int predictor = 1; predictor <= 7; predictor++)
             {
-                int[,] compressedImage = CompressImage(predictor, originalImageArray);
+                int[,] compressedImage = CompressImage(predictor, originalImage);
 
                 sb.Append("<div style='border:1px solid black;margin-bottom:25px;padding:10px 10px 10px 30px;'>");
 
-                sb.Append(String.Format("<h3>Predictor {0}: {1} </h3>", predictor, String.Format(@"<img src='..\..\Images\Predictor{0}.png' align='middle'>", predictor)));
+                sb.Append(String.Format("<h3>Predictor {0}: {1} </h3>", predictor, String.Format(@"<img src='Predictor{0}.png' align='middle'>", predictor)));
 
                 // Huffman encode the compressed image
-                List<string> huffmanEncodedImage = HuffmanEncode(compressedImage, huffmanTable, out int compressedSizeInBits);
+                List<string> huffmanEncodedImage = HuffmanEncode(compressedImage, huffmanTable, out int compressedImageSizeInBits);
 
                 PrintHuffmanEncodedImage(sb, huffmanEncodedImage);
 
@@ -75,16 +78,20 @@ namespace CAP6010_Project
                 int[,] huffmanDecodedImage = HuffmanDecode(huffmanEncodedImage, huffmanTable);
 
                 // Decompress Image
-                int[,] deCompressedImage = DecompressImage(predictor, huffmanDecodedImage);
+                int[,] decompressedImage = DecompressImage(predictor, huffmanDecodedImage);
 
-                PrintStats(sb, unCompressedSizeInBits, compressedSizeInBits);
+                // Print the decompressed image-should look like the original
+                sb.Append("<h3>Decompressed Image:</h3>");
+                PrintImage(sb, decompressedImage);
+
+                PrintStats(sb, originalImageSizeInBits, compressedImageSizeInBits, originalImage, decompressedImage);
 
                 sb.Append("</div>");
             }
 
             sb.Append("</body></html>");
 
-            File.WriteAllText(@"output.html", sb.ToString());
+            File.WriteAllText(@"../../Files/output.html", sb.ToString());
 
             Application.Current.Shutdown();
         }
@@ -92,13 +99,13 @@ namespace CAP6010_Project
         /// <summary>
         /// Imports a file of comma separated values
         /// </summary>
-        /// <param name="inputFileSizeInBits">Size (in bits) of the import data</param>
+        /// <param name="originalImageSizeInBits">Size (in bits) of the import data</param>
         /// <returns>a 2D array of the imported values</returns>
-        private int[,] ImportCSV(out int inputFileSizeInBits)
+        private int[,] ImportCSV(out int originalImageSizeInBits)
         {
-            inputFileSizeInBits = 0;
+            originalImageSizeInBits = 0;
 
-            string filePath = @"../../Files/inputfile1.csv";
+            string filePath = @"../../Files/inputfile2.csv";
 
             string csvData;
 
@@ -116,12 +123,12 @@ namespace CAP6010_Project
 
             // Get the total number of rows in the import file
             string[] rows = csvData.Split("\r\n".ToCharArray(), StringSplitOptions.RemoveEmptyEntries);
-            this.numberOfRows = rows.Count();
+            this.imageHeight = rows.Count();
 
             // Get the total number of columns/cells in the import file
-            this.numberOfColumns = (rows[0].Split(',')).Count();
+            this.imageWidth = (rows[0].Split(',')).Count();
 
-            int[,] array = new int[numberOfRows, this.numberOfColumns];
+            int[,] array = new int[imageHeight, this.imageWidth];
 
             foreach (string row in rows)
             {
@@ -141,24 +148,24 @@ namespace CAP6010_Project
 
             // Calculate the size (in bits) of the import data
             // Should be 16x16x8 for the project test image
-            inputFileSizeInBits = this.numberOfRows * this.numberOfColumns * 8;
+            originalImageSizeInBits = this.imageHeight * this.imageWidth * 8;
 
             return array;
         }
 
-        private void Print2DArray(StringBuilder sb, int[,] array)
+        private void PrintImage(StringBuilder sb, int[,] array)
         {
             sb.Append("<table border=1>");
 
-            int dim1 = array.GetLength(0);
-            int dim2 = array.GetLength(1);
+            //int dim1 = array.GetLength(0);
+            //int dim2 = array.GetLength(1);
 
-            for (int row = 0; row < dim1; row++)
+            for (int row = 0; row < this.imageHeight; row++)
             {
                 sb.Append("<tr>");
 
                 // Loop through columns
-                for (int col = 0; col < dim2; col++)
+                for (int col = 0; col < this.imageWidth; col++)
                 {
                     sb.Append("<td width='50px'>");
                     sb.Append(array[row, col].ToString());
@@ -174,7 +181,7 @@ namespace CAP6010_Project
         private void PrintHuffmanEncodedImage(StringBuilder sb, List<string> huffmanEncodedImage)
         {
             sb.Append("<p>");
-            sb.Append("<h4>Compressed Binary Sequence:</h4>");
+            sb.Append("<h3>Compressed Binary Sequence:</h3>");
 
             // Print each row of the Huffman encoded image
             foreach (string row in huffmanEncodedImage)
@@ -187,20 +194,35 @@ namespace CAP6010_Project
             sb.Append("<br>");
         }
 
-        private void PrintStats(StringBuilder sb, int unCompressedSizeInBits, int compressedSizeInBits)
+        private void PrintStats(StringBuilder sb, int uncompressedSizeInBits, int compressedSizeInBits, int[,] originalImage, int[,] decompressedImage)
         {
-            float compressionRatio = (float)unCompressedSizeInBits / (float)compressedSizeInBits;
+            // Find Compression Ration
+            float compressionRatio = (float)uncompressedSizeInBits / (float)compressedSizeInBits;
+            // Find Bits per Pixel
             float bitsPerPixel = 8 / compressionRatio;
+            // Find RMS
+            double rms = 0;
 
+            for (int row = 0; row < this.imageHeight; row++)
+            {
+                // Loop through columns
+                for (int col = 0; col < this.imageWidth; col++)
+                {
+                    rms += Math.Pow((originalImage[row, col] - decompressedImage[row, col]), 2);
+                }
+            }
+
+
+            sb.Append("<h3>Stats:</h3>");
             sb.Append("<p>");
             sb.Append("Compression Ratio: ");
-            sb.Append(((float)unCompressedSizeInBits).ToString() + " / " + ((float)compressedSizeInBits).ToString() + " = " + compressionRatio.ToString());
+            sb.Append(((float)uncompressedSizeInBits).ToString() + " / " + ((float)compressedSizeInBits).ToString() + " = " + compressionRatio.ToString());
             sb.Append("<br>");
             sb.Append("Bits/Pixel: ");
             sb.Append("8 / " + compressionRatio.ToString() + " = " + bitsPerPixel.ToString());
             sb.Append("<br>");
             sb.Append("RMS Error: ");
-            sb.Append("[rms value holder]");
+            sb.Append(rms);
             sb.Append("<br>");
             sb.Append("</p>");
         }
@@ -218,16 +240,13 @@ namespace CAP6010_Project
                 return null;
             }
 
-            int dim1 = originalImage.GetLength(0);
-            int dim2 = originalImage.GetLength(1);
-
-            int[,] compressedImage = new int[dim1, dim2];
+            int[,] compressedImage = new int[this.imageHeight, this.imageWidth];
 
             // Loop through rows
-            for (int row = 0; row < dim1; row++)
+            for (int row = 0; row < this.imageHeight; row++)
             {
                 // Loop through columns
-                for (int col = 0; col < dim2; col++)
+                for (int col = 0; col < this.imageWidth; col++)
                 {
                     // Check if A exists, if so, get it's value
                     bool a_exists = TryGetA(originalImage, row, col, out int a);
@@ -277,18 +296,13 @@ namespace CAP6010_Project
                 return null;
             }
 
-            int dim1 = compressedImage.GetLength(0);
-            int dim2 = compressedImage.GetLength(1);
-
-            int[,] decompressedImage = new int[dim1, dim2];
-            
-            int previousDecompressedValue = decompressedImage[0, 0];
+            int[,] decompressedImage = new int[this.imageHeight, this.imageWidth];
 
             // Loop through rows
-            for (int row = 0; row < dim1; row++)
+            for (int row = 0; row < this.imageHeight; row++)
             {
                 // Loop through columns
-                for (int col = 0; col < dim2; col++)
+                for (int col = 0; col < this.imageWidth; col++)
                 {
                     // Check if A exists, if so, get it's value
                     bool a_exists = TryGetA(decompressedImage, row, col, out int a);
@@ -621,20 +635,20 @@ namespace CAP6010_Project
         /// <param name="compressedImage"></param>
         /// <param name="huffmanTable"></param>
         /// <returns></returns>
-        private List<string> HuffmanEncode(int[,] compressedImage, Dictionary<string, string> huffmanTable, out int compressedSizeInBits)
+        private List<string> HuffmanEncode(int[,] compressedImage, Dictionary<string, string> huffmanTable, out int compressedImageSizeInBits)
         {
-            compressedSizeInBits = 0;
+            compressedImageSizeInBits = 0;
 
             List<string> huffmanCodeList = new List<string>();
 
             // Loop through rows
-            for (int row = 0; row < compressedImage.GetLength(0); row++)
+            for (int row = 0; row < this.imageHeight; row++)
             {
                 StringBuilder rowOfHuffmanCodes = new StringBuilder();
                 rowOfHuffmanCodes.Clear();
 
                 // Loop through columns
-                for (int col = 0; col < compressedImage.GetLength(1); col++)
+                for (int col = 0; col < this.imageWidth; col++)
                 {
                     int valueToEncode = compressedImage[row, col];
                     string encodedValue;
@@ -655,7 +669,7 @@ namespace CAP6010_Project
                     rowOfHuffmanCodes.Append(encodedValue);
                 }
 
-                compressedSizeInBits += rowOfHuffmanCodes.ToString().Length;
+                compressedImageSizeInBits += rowOfHuffmanCodes.ToString().Length;
 
                 huffmanCodeList.Add(rowOfHuffmanCodes.ToString());
             }
@@ -663,11 +677,10 @@ namespace CAP6010_Project
             return huffmanCodeList;
         }
 
-
         private int[,] HuffmanDecode(List<string> huffmanEncodedImage, Dictionary<string, string> huffmanTable)
         {
             // Create the output array. Use values we calculated when we read in the file.
-            int[,] output = new int[this.numberOfRows, this.numberOfColumns];
+            int[,] output = new int[this.imageHeight, this.imageWidth];
 
             // Get the first row from the list of binary strings
             string firstRow = huffmanEncodedImage[0];
@@ -713,5 +726,6 @@ namespace CAP6010_Project
 
             return output;
         }
+
     }
 }

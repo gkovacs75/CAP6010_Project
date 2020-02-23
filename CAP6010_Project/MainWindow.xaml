@@ -24,10 +24,7 @@
             <ColumnDefinition Width="auto"></ColumnDefinition>
             <ColumnDefinition Width="*"></ColumnDefinition>
         </Grid.ColumnDefinitions>
-
-       
-
-        
         <Button Name="saveButton" Grid.Column="1" Grid.Row="1" Width="100" Height="30" Content="Run" Click="RunButton_Click"></Button>
+                
     </Grid>
 </Window>
