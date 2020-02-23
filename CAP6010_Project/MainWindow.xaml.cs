@@ -42,6 +42,8 @@ namespace CAP6010_Project
 
         private void Run()
         {
+            List<Result> results = new List<Result>();
+
             StringBuilder sb = new StringBuilder();
 
             sb.Append("<!DOCTYPE html><html><body>");
@@ -84,10 +86,14 @@ namespace CAP6010_Project
                 sb.Append("<h3>Decompressed Image:</h3>");
                 PrintImage(sb, decompressedImage);
 
-                PrintStats(sb, originalImageSizeInBits, compressedImageSizeInBits, originalImage, decompressedImage);
+                Result result = PrintStats(sb, predictor, originalImageSizeInBits, compressedImageSizeInBits, originalImage, decompressedImage);
+                results.Add(result);
 
                 sb.Append("</div>");
             }
+
+            DisplaySummary(sb, results);
+
 
             sb.Append("</body></html>");
 
@@ -157,9 +163,6 @@ namespace CAP6010_Project
         {
             sb.Append("<table border=1>");
 
-            //int dim1 = array.GetLength(0);
-            //int dim2 = array.GetLength(1);
-
             for (int row = 0; row < this.imageHeight; row++)
             {
                 sb.Append("<tr>");
@@ -194,7 +197,7 @@ namespace CAP6010_Project
             sb.Append("<br>");
         }
 
-        private void PrintStats(StringBuilder sb, int uncompressedSizeInBits, int compressedSizeInBits, int[,] originalImage, int[,] decompressedImage)
+        private Result PrintStats(StringBuilder sb, int predictor, int uncompressedSizeInBits, int compressedSizeInBits, int[,] originalImage, int[,] decompressedImage)
         {
             // Find Compression Ration
             float compressionRatio = (float)uncompressedSizeInBits / (float)compressedSizeInBits;
@@ -225,6 +228,8 @@ namespace CAP6010_Project
             sb.Append(rms);
             sb.Append("<br>");
             sb.Append("</p>");
+
+            return new Result(predictor, compressionRatio, bitsPerPixel, rms);
         }
 
         /// <summary>
@@ -727,5 +732,39 @@ namespace CAP6010_Project
             return output;
         }
 
+        private void DisplaySummary(StringBuilder sb, List<Result> results)
+        {
+            sb.Append("<table border=1>");
+
+
+            sb.Append("<tr>");
+            foreach (Result result in results)
+            {
+
+                sb.Append("<th>");
+                sb.Append(result.Predictor.ToString());
+                sb.Append("</th>");
+            }
+
+            sb.Append("</tr>");
+
+            foreach (Result result in results)
+            {
+                sb.Append("<tr>");
+                sb.Append("<td>");
+                sb.Append(result.CompressionRatio.ToString());
+                sb.Append("</td>");
+                sb.Append("<td>");
+                sb.Append(result.BitsPerPixel.ToString());
+                sb.Append("</td>");
+                sb.Append("<td>");
+                sb.Append(result.RMSError.ToString());
+                sb.Append("</td>");
+                sb.Append("</tr>");
+            }
+
+            sb.Append("</table>");
+            sb.Append("<br>");
+        }
     }
 }
