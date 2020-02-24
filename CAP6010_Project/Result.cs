@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 
 namespace CAP6010_Project
 {
+    /// <summary>
+    /// This class is used to collect and display results per predictor
+    /// </summary>
     public class Result
     {
         public Result(int predictor, float compressionRatio, float bitsPerPixel, double rmsError)

@@ -734,34 +734,56 @@ namespace CAP6010_Project
 
         private void DisplaySummary(StringBuilder sb, List<Result> results)
         {
+            sb.Append("<h3>Summary:</h3>");
+
             sb.Append("<table border=1>");
 
 
             sb.Append("<tr>");
+            sb.Append("<th width='150px'>");
+            sb.Append("</th>");
+
             foreach (Result result in results)
             {
-
-                sb.Append("<th>");
+                sb.Append("<th width='80px'>");
                 sb.Append(result.Predictor.ToString());
                 sb.Append("</th>");
             }
 
             sb.Append("</tr>");
 
+            sb.Append("<th>");
+            sb.Append("Compression Ratio");
             foreach (Result result in results)
             {
-                sb.Append("<tr>");
                 sb.Append("<td>");
                 sb.Append(result.CompressionRatio.ToString());
                 sb.Append("</td>");
+            }
+            sb.Append("</th>");
+            sb.Append("</tr>");
+
+            sb.Append("<th>");
+            sb.Append("Bits/Pixel");
+            foreach (Result result in results)
+            {
                 sb.Append("<td>");
                 sb.Append(result.BitsPerPixel.ToString());
                 sb.Append("</td>");
+            }
+            sb.Append("</th>");
+            sb.Append("</tr>");
+
+            sb.Append("<th>");
+            sb.Append("RMS Error");
+            foreach (Result result in results)
+            {
                 sb.Append("<td>");
                 sb.Append(result.RMSError.ToString());
                 sb.Append("</td>");
-                sb.Append("</tr>");
             }
+            sb.Append("</th>");
+            sb.Append("</tr>");
 
             sb.Append("</table>");
             sb.Append("<br>");
