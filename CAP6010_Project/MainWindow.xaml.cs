@@ -104,6 +104,7 @@ namespace CAP6010_Project
 
             DisplaySummary(sb, results);
 
+            DisplayConclusion(sb);
 
             sb.Append("</body></html>");
 
@@ -111,7 +112,7 @@ namespace CAP6010_Project
 
             Application.Current.Shutdown();
         }
-
+        
         /// <summary>
         /// Imports a file of comma separated values
         /// </summary>
@@ -795,6 +796,21 @@ namespace CAP6010_Project
             sb.Append("</tr>");
 
             sb.Append("</table>");
+            sb.Append("<br>");
+        }
+
+        private void DisplayConclusion(StringBuilder sb)
+        {
+            sb.Append("<h3>Conclusion:</h3>");
+
+            sb.Append("<p>");
+
+            sb.Append("I was able to achieve the maximum compression ratio of 2.860335 with predictor P<sub>6</sub>; This coincided with the fewest bits/pixel of " +
+                "2.796875.  The worst performing predictor was P<sub>3</sub>, with a compression ratio of 2.158061 and the maximum bits/pixel of 3.707031.  In " +
+                "each case, I was able to retrieve the original image exactly how it was and therefore had an rms error of 0 in each case.  ");
+
+            sb.Append("</p>");
+
             sb.Append("<br>");
         }
     }
