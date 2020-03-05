@@ -37,6 +37,7 @@ namespace CAP6010_Project
 
         private void RunButton_Click(object sender, RoutedEventArgs e)
         {
+            // This started out as a WPF Windows application which is why we have a run button. 
             Run();
         }
 
@@ -64,26 +65,35 @@ namespace CAP6010_Project
             PrintImage(sb, originalImage);
 
             for (int predictor = 1; predictor <= 7; predictor++)
-            {
-                int[,] compressedImage = CompressImage(predictor, originalImage);
-
+            {                
                 sb.Append("<div style='border:1px solid black;margin-bottom:25px;padding:10px 10px 10px 30px;'>");
 
                 sb.Append(String.Format("<h3>Predictor {0}: {1} </h3>", predictor, String.Format(@"<img src='Predictor{0}.png' align='middle'>", predictor)));
 
+                int[,] compressedImage = CompressImage(predictor, originalImage);
+
+                // Image after Compression
+                sb.Append("<h3>Image After Compression:</h3>");
+                PrintImage(sb, compressedImage);
+
                 // Huffman encode the compressed image
                 List<string> huffmanEncodedImage = HuffmanEncode(compressedImage, huffmanTable, out int compressedImageSizeInBits);
 
+                // Print the compressed, huffman encoded image as a binary sequence
                 PrintHuffmanEncodedImage(sb, huffmanEncodedImage);
 
                 // Decode the Huffman Encoded Image
                 int[,] huffmanDecodedImage = HuffmanDecode(huffmanEncodedImage, huffmanTable);
 
+                // Image after Huffman Decode
+                sb.Append("<h3>Image After Huffman Decoding:</h3>");
+                PrintImage(sb, huffmanDecodedImage);
+
                 // Decompress Image
                 int[,] decompressedImage = DecompressImage(predictor, huffmanDecodedImage);
 
                 // Print the decompressed image-should look like the original
-                sb.Append("<h3>Decompressed Image:</h3>");
+                sb.Append("<h3>Image After Decompression:</h3>");
                 PrintImage(sb, decompressedImage);
 
                 Result result = PrintStats(sb, predictor, originalImageSizeInBits, compressedImageSizeInBits, originalImage, decompressedImage);
@@ -184,7 +194,7 @@ namespace CAP6010_Project
         private void PrintHuffmanEncodedImage(StringBuilder sb, List<string> huffmanEncodedImage)
         {
             sb.Append("<p>");
-            sb.Append("<h3>Compressed Binary Sequence:</h3>");
+            sb.Append("<h3>Image After Huffman Encoding:</h3>");
 
             // Print each row of the Huffman encoded image
             foreach (string row in huffmanEncodedImage)
@@ -662,8 +672,7 @@ namespace CAP6010_Project
                     if (huffmanTable.ContainsValue(valueToEncode.ToString()))
                     {
                         // If it exists, append it to the output list
-                        encodedValue = huffmanTable.FirstOrDefault(x => x.Value == valueToEncode.ToString()).Key;
-                        //encodedValue = huffmanTable[valueToEncode.ToString()];
+                        encodedValue = huffmanTable.FirstOrDefault(x => x.Value == valueToEncode.ToString()).Key;                        
                     }
                     else
                     {
@@ -746,7 +755,7 @@ namespace CAP6010_Project
             foreach (Result result in results)
             {
                 sb.Append("<th width='80px'>");
-                sb.Append(result.Predictor.ToString());
+                sb.Append("P<sub>" + result.Predictor.ToString() + "</sub>");
                 sb.Append("</th>");
             }
 
